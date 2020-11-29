@@ -1,4 +1,4 @@
-ParallelQueues
+ParallelQueue
 ##############
 A SimPy Extension for parallel queueing systems and routing.
 
