@@ -1,6 +1,9 @@
 import random
+
 import pandas as pd
-from simpy import Environment, Resource, Interrupt
+from simpy import Environment, Resource
+
+from parallelqueue.components import Source
 
 
 class ParallelQueueSystem:
@@ -46,117 +49,18 @@ class ParallelQueueSystem:
         self.arrivalMean = arrivalMean
         self.ReplicaDict = {}
         self.Number = 0 if self.infiniteJobs else numberJobs
-        self.Queues = []
+        self.queuesOverTime = []
         self.df = df
-
-    def Source(self, env, number, interval, queues):
-        """
-        Poisson arrival process.
-
-        :param env: Environment for the simulation
-        :type env: simpy.Environment
-        :param number: Max numberJobs of jobs if infiniteJobs is false.
-        :type number: int
-        :param interval: Poisson rate parameter :math:`\lambda`.
-        :type interval: float
-        :param queues: A list of all queues making up the parallel system.
-        :type queues: List[simpy.Resource]
-        """
-        if not self.infiniteJobs:
-            for i in range(number):
-                c = self.Job(env, 'Job%02d' % i, queues)
-                env.process(c)
-                t = random.expovariate(1.0 / interval)
-                yield env.timeout(t)
-        else:
-            while True:  # referring to until not being passed
-                i = number
-                number += 1
-                c = self.Job(env, 'Job%02d' % i, queues)
-                env.process(c)
-                t = random.expovariate(1.0 / interval)
-                yield env.timeout(t)
 
     def __SimManager(self):
         random.seed(self.seed)
         env = Environment()
         queues = {i: Resource(env) for i in range(self.parallelism)}
-        env.process(self.Source(env, self.Number, self.arrivalMean, queues))
+
+        env.process(Source(system=self, env=env, number=self.Number, interval=self.arrivalMean, queues=queues))
         print(f'\n Running simulation with seed {self.seed}... \n')
         env.run(until=self.maxTime)
         print('\n Done \n')
-
-    def Job(self, env, name, queues):
-        """
-        Specifies a job in the system. If replication is enabled, this is the superclass for the set of each job and their replicas.
-
-        :param env: Environment for the simulation
-        :type env: simpy.Environment
-        :param name: Identifier for the job.
-        :type name: str
-        :param queues: A list of Queues
-        :type queues: List[simpy.Resource]
-        """
-        arrive = env.now
-        Q_length = {i: self.NoInSystem(queues[i]) for i in self.QueueSelector(self.d, queues)}
-        self.Queues.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-        choices = []
-        if self.r:
-            for i, value in Q_length.items():
-                if value <= self.r:
-                    choices.append(i)  # the chosen queue numberJobs
-        else:
-            for i in Q_length:
-                choices.append(i)  # For no threshold
-        if len(choices) < 1:
-            choices = [list(Q_length.keys())[0]]  # random choice
-        if self.doPrint:
-            print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
-        replicas = []
-        for choice in choices:
-            c = self.Replica(env, name, arrive, queues, choice)
-            replicas.append(env.process(c))
-        self.ReplicaDict[name] = replicas  # Add a while statement?
-        yield from replicas
-
-    def Replica(self, env, name, arrive, queues, choice):
-        """
-        For a redundancy model, this generator/process defines the behaviour of a job (replica or original) as they await their turn.
-        
-        :param env: Environment for the simulation
-        :type env: simpy.Environment
-        :param name: Identifier for the job.
-        :type name: str
-        :param queues: A list of Queues.
-        :type queues: List[simpy.Resource]
-        :param arrive: Time of job arrival (before replication).
-        :type arrive: float
-        :param choice: The queue which this replica is currently in
-        :type choice: int
-        """
-        while True:
-            try:
-                with queues[choice].request() as request:
-                    # Wait in queue
-                    Rename = f"{name}: {choice}"
-                    yield request
-                    wait = env.now - arrive
-                    # at server
-                    if self.doPrint:
-                        print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
-                    tib = random.expovariate(1.0 / self.timeInBank)
-                    yield env.timeout(tib)
-                    self.Queues.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-                    if self.doPrint:
-                        print(f'{env.now:7.4f} {Rename}: Finished')
-                    for c in self.ReplicaDict[name]:
-                        try:
-                            c.interrupt()
-                        except:
-                            pass
-            except Interrupt:
-                if self.doPrint:
-                    print(f'{Rename} - interrupted')
 
     @staticmethod
     def NoInSystem(R):
@@ -174,4 +78,4 @@ class ParallelQueueSystem:
         """
         self.__SimManager()
         if self.df:
-            return pd.DataFrame(self.Queues)
+            return pd.DataFrame(self.queuesOverTime)

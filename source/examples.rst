@@ -15,7 +15,7 @@ To start, let us run our system until either 30 customers are generated and comp
     d=1,            # We choose exactly one queue per job
     parallelism=2,  # There are a total of two queues to choose from per job
     df = True       # returns a dataframe
-    ).RunSim()      # Runs the simulation
+    ).RunSim        # Runs the simulation
 
 Now, with our dataframe, we can visualize the queue loads over time by running:
 
