@@ -21,6 +21,6 @@ Now, with our dataframe, we can visualize the queue loads over time by running:
 
     .. code-block:: python
 
-    from matplotlib import pyplot as plt
-    sim.plot()
-    plt.show()
+        from matplotlib import pyplot as plt
+        sim.plot()
+        plt.show()
