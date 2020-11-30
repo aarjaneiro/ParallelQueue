@@ -5,10 +5,8 @@ from simpy import Environment, Resource
 
 from parallelqueue.components import PoissonArrivals
 
-
 class RedundancyQueueSystem:
-    """
-    A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
+    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join while awaiting
     service. After completing service, each job and its replicas are disposed of.
 
@@ -73,17 +71,14 @@ class RedundancyQueueSystem:
 
     @property
     def RunSim(self):
-        """
-        Runs the simulation. Returns a dataframe if df is set to true.
-        """
+        """Runs the simulation. Returns a dataframe if df is set to true."""
         self.__SimManager()
         if self.df:
             return pd.DataFrame(self.queuesOverTime)
 
 
 class JSQSystem:
-    """
-    A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for each arriving job.
+    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for each arriving job.
 
     :param numberJobs: Max number of jobs if infiniteJobs is False. Will be ignored if infiniteJobs is True.
     :param arrivalMean: Mean of Poisson arrival process.
@@ -143,9 +138,7 @@ class JSQSystem:
 
     @property
     def RunSim(self):
-        """
-        Runs the simulation. Returns a dataframe if df is set to true.
-        """
+        """Runs the simulation. Returns a dataframe if df is set to true."""
         self.__SimManager()
         if self.df:
             return pd.DataFrame(self.queuesOverTime)
