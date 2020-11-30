@@ -16,12 +16,12 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
-project = 'ParallelQueues'
+project = 'ParallelQueue'
 copyright = '2020, Aaron Janeiro Stone'
 author = 'Aaron Janeiro Stone'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.0.2'
 
 # -- General configuration ---------------------------------------------------
 

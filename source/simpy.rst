@@ -31,4 +31,24 @@ where :code:`yield` instead denotes a single output which will not cause the gen
         print('Wait, I forgot this!')
         yield bar(a)
 
-which is useful for an object which will be existing in our universe for a period of time. Return would instead immediately end the function and output :code:`foo(a)` .
+which is useful for an object which will be existing in our universe for a period of time. Return would instead immediately end the function and output :code:`foo(a)`. For a more concrete example, consider:
+
+.. code-block:: python
+
+   def generator(a):
+        yield print(a)
+        print('Wait, I forgot this!')
+        yield print(a + 1)
+    gen = generator(1)
+
+which, when evaluating with the :code:`next` command, gives us:
+
+.. code-block:: python
+
+    >>> next(gen)
+    1
+    >>> next(gen)
+    Wait, I forgot this!
+    2
+
+In the end, we now have a way to progress an object in some form of time by taking "steps".
