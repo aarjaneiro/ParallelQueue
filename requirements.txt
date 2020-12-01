@@ -1,4 +1,4 @@
 setuptools~=50.3.2
 simpy~=4.0.1
 numpy~=1.19.4
-python-dateutil~=2.8.1
+pandas~=1.1.4
