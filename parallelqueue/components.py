@@ -1,14 +1,66 @@
 """
-Basic building components (generators/processes) for parallel models.
+Basic building components (generators/processes) for parallel models. In general, the framework allows one to build
+a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
+Arrivals->Router->Job/Servicing.
 """
+#   TODO: reimplement all base models in terms of the newly-added general distribution functions.
 
 import random
 
 from simpy import Interrupt
 
 
-def Job(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, queues, choice):
+def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
+        serviceDistribution=random.expovariate(0.5)):
     """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after routing.
+
+    :param serviceDistribution: Service distribution for job processing.
+    :type serviceDistribution: function.
+    :param doPrint: If true, each event will trigger a statement to be printed.
+    :param queuesOverTime: A set of queues passed by the simulation manager representing the time-evolution of the system.
+    :type queuesOverTime: List[simpy.Resource]
+    :param replicaDict: A set of a job and its replications, of which this generator itself is a member of.
+    :type replicaDict: {str: List[simpy.Process]}
+    :param env: Environment for the simulation
+    :type env: simpy.Environment
+    :param name: Identifier for the job.
+    :type name: str
+    :param queues: A list of queuesOverTime.
+    :type queues: List[simpy.Resource]
+    :param arrive: Time of job arrival (before replication).
+    :type arrive: float
+    :param choice: The queue which this replica is currently in
+    :type choice: int
+    """
+    while True:
+        try:
+            with queues[choice].request() as request:
+                # Wait in queue
+                Rename = f"{name}: {choice}"
+                yield request
+                wait = env.now - arrive
+                # at server
+                if doPrint:
+                    print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
+                tib = serviceDistribution
+                yield env.timeout(tib)
+                queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+                if doPrint:
+                    print(f'{env.now:7.4f} {Rename}: Finished')
+                if replicaDict:
+                    for c in replicaDict[name]:
+                        try:
+                            c.interrupt()
+                        except:
+                            pass
+        except Interrupt:
+            if doPrint:
+                print(f'{Rename} - interrupted')
+
+
+def ExpJob(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, queues, choice):
+    """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after routing.
+    This particular form assumes the service distribution to be exponential
 
     :param doPrint: If true, each event will trigger a statement to be printed.
     :param meanServer: Mean servicing time.
@@ -83,8 +135,8 @@ def PoissonArrivals(system, env, number, interval, queues):
             yield env.timeout(t)
 
 
-def JobRouter(system, env, name, queues, jobProcess=Job):
-    """Specifies a job in the system. If replication is enabled, this is the superclass for the set of each job and their replicas.
+def JobRouter(system, env, name, queues, jobProcess=ExpJob):
+    """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each job and their replicas.
 
     :param system: System providing environment.
     :type system: parallelqueue.base_models.ParallelQueueSystem
@@ -128,3 +180,33 @@ def JobRouter(system, env, name, queues, jobProcess=Job):
         choice = min(choices)
         jobProcess(system.doPrint, system.timeInBank, system.queuesOverTime, False, env, name, arrive,
                    queues, choice)
+
+
+def GeneralArrivals(system, env, number, queues, distribution=random.expovariate(0.5)):
+    """General arrival process; interarrival times are defined by the given distribution
+
+    :param system: System providing environment.
+    :type system: parallelqueue.base_models.ParallelQueueSystem
+    :param env: Environment for the simulation
+    :type env: simpy.Environment
+    :param number: Max numberJobs of jobs if infiniteJobs is false.
+    :type number: int
+    :param distribution: Continuous random variable defining interarrival times.
+    :type distribution: Union[int,float]
+    :param queues: A list of all queues making up the parallel system.
+    :type queues: List[simpy.Resource]
+    """
+    if not system.infiniteJobs:
+        for i in range(number):
+            c = JobRouter(system, env, 'JobRouter%02d' % i, queues)
+            env.process(c)
+            t = distribution
+            yield env.timeout(t)
+    else:
+        while True:  # referring to until not being passed
+            i = number
+            number += 1
+            c = JobRouter(system, env, 'JobRouter%02d' % i, queues)
+            env.process(c)
+            t = distribution
+            yield env.timeout(t)

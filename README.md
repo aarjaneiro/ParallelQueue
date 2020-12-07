@@ -26,3 +26,8 @@ Current Goals
 1. Introduce more common models into `base_models`.
 2. Optimize SimPy boilerplate common to all models by incorporating Cython.  
 3. Incorporate https://github.com/tqdm/tqdm for better progress visualization and simulation parallelization.
+
+Interested in Contributing?
+---------------------------
+Do feel free to write an issue or submit a PR! If you are interested co-maintaining this package with me, please email me at
+ajstone@uwaterloo.ca (merely include a brief description of your familiarity with Python and Queueing Theory).

@@ -5,6 +5,7 @@ from simpy import Environment, Resource
 
 from parallelqueue.components import PoissonArrivals
 
+
 class RedundancyQueueSystem:
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join while awaiting
@@ -103,7 +104,7 @@ class JSQSystem:
 
     """
 
-    def __init__(self, arrivalMean, maxTime, parallelism, seed, d, meanServer,  doPrint=False, df=False,
+    def __init__(self, arrivalMean, maxTime, parallelism, seed, d, meanServer, doPrint=False, df=False,
                  infiniteJobs=True, numberJobs=0):
         self.infiniteJobs = infiniteJobs
         self.d = d
