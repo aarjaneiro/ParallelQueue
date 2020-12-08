@@ -147,7 +147,8 @@ def JobRouter(system, env, name, queues, **kwargs):
     :type name: str
     :param queues: A list of queues to consider.
     :type queues: List[simpy.Resource]
-
+    :param jobProcess: Process defining job/replica behaviour following routing.
+    :type jobProcess: Generator
     """
     arrive = env.now
     Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, queues)}
@@ -167,8 +168,7 @@ def JobRouter(system, env, name, queues, **kwargs):
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
         for choice in choices:
-            c = Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice,
-                    **kwargs)
+            c = Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice, **kwargs)
 
             replicas.append(env.process(c))
         system.ReplicaDict[name] = replicas  # Add a while statement?
@@ -190,8 +190,12 @@ def GeneralArrivals(system, env, number, queues, **kwargs):
     :type env: simpy.Environment
     :param number: Max numberJobs of jobs if infiniteJobs is false.
     :type number: int
+    :param distribution: Continuous random variable defining interarrival times.
+    :type distribution: Union[int,float]
     :param queues: A list of all queues making up the parallel system.
     :type queues: List[simpy.Resource]
+    :param jobProcess: Job generator
+    :type jobProcess: generator
     """
     if not system.infiniteJobs:
         for i in range(number):
