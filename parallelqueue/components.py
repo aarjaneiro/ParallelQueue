@@ -33,7 +33,7 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
         try:
             with queues[choice].request() as request:
                 # Wait in queue
-                Rename = f"{name}: {choice}"
+                Rename = f"{name}@{choice}"
                 yield request
                 wait = env.now - arrive
                 # at server
@@ -82,7 +82,7 @@ def ExpJob(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, 
         try:
             with queues[choice].request() as request:
                 # Wait in queue
-                Rename = f"{name}: {choice}"
+                Rename = f"{name}@{choice}"
                 yield request
                 wait = env.now - arrive
                 # at server
@@ -122,7 +122,7 @@ def PoissonArrivals(system, env, number, interval, queues, **kwargs):
         print("WARNING: kwargs given are ignored in the current context!")
     if not system.infiniteJobs:
         for i in range(number):
-            c = JobRouter(system, env, 'JobRouter%02d' % i, queues)
+            c = JobRouter(system, env, 'Job%02d' % i, queues)
             env.process(c)
             t = random.expovariate(1.0 / interval)
             yield env.timeout(t)
@@ -130,7 +130,7 @@ def PoissonArrivals(system, env, number, interval, queues, **kwargs):
         while True:  # referring to until not being passed
             i = number
             number += 1
-            c = JobRouter(system, env, 'JobRouter%02d' % i, queues)
+            c = JobRouter(system, env, 'Job%02d' % i, queues)
             env.process(c)
             t = random.expovariate(1.0 / interval)
             yield env.timeout(t)
@@ -147,16 +147,14 @@ def JobRouter(system, env, name, queues, **kwargs):
     :type name: str
     :param queues: A list of queues to consider.
     :type queues: List[simpy.Resource]
-    :param jobProcess: Process defining job/replica behaviour following routing.
-    :type jobProcess: Generator
     """
     arrive = env.now
     Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, queues)}
     system.queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
     choices = []
-    if system.r:
-        if system.ReplicaDict:  # Replication chosen
-            for i, value in Q_length.items():
+    if system.ReplicaDict is not None:  # Replication chosen
+        if system.r:
+         for i, value in Q_length.items():
                 if value <= system.r:
                     choices.append(i)  # the chosen queue numberJobs
         else:
@@ -168,13 +166,15 @@ def JobRouter(system, env, name, queues, **kwargs):
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
         for choice in choices:
-            c = Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice, **kwargs)
+            c = Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice,
+                    **kwargs)
 
             replicas.append(env.process(c))
         system.ReplicaDict[name] = replicas  # Add a while statement?
         yield from replicas
     else:  # Shortest queue case
-        print(f'{arrive:7.4f} {name}: Arrival')
+        if system.doPrint:
+            print(f'{arrive:7.4f} {name}: Arrival')
         for i in Q_length:
             choices.append(i)
         choice = min(choices)
@@ -190,16 +190,12 @@ def GeneralArrivals(system, env, number, queues, **kwargs):
     :type env: simpy.Environment
     :param number: Max numberJobs of jobs if infiniteJobs is false.
     :type number: int
-    :param distribution: Continuous random variable defining interarrival times.
-    :type distribution: Union[int,float]
     :param queues: A list of all queues making up the parallel system.
     :type queues: List[simpy.Resource]
-    :param jobProcess: Job generator
-    :type jobProcess: generator
     """
     if not system.infiniteJobs:
         for i in range(number):
-            c = JobRouter(system, env, 'JobRouter%02d' % i, queues, **kwargs)
+            c = JobRouter(system, env, 'Job%02d' % i, queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
@@ -207,7 +203,7 @@ def GeneralArrivals(system, env, number, queues, **kwargs):
         while True:  # referring to until not being passed
             i = number
             number += 1
-            c = JobRouter(system, env, 'JobRouter%02d' % i, queues, **kwargs)
+            c = JobRouter(system, env, 'Job%02d' % i, queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
