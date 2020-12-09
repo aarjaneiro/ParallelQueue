@@ -37,5 +37,5 @@ jobs:
         
     - name: pytest
       run: |
-        pytest /tests/models_tests.py
+        python /tests/models_tests.py #change to pytest explicit later 
         
