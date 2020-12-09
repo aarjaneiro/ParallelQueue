@@ -202,10 +202,9 @@ def GeneralArrivals(system, env, number, queues, **kwargs):
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
     else:
-        i = number
         while True:  # referring to until not being passed
             number += 1
-            c = JobRouter(system, env, 'Job%02d' % (i+1), queues, **kwargs)
+            c = JobRouter(system, env, 'Job%02d' % number, queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
