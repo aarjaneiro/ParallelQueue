@@ -13,7 +13,5 @@ setup(
     license='MIT',
     author='Aaron Janeiro Stone',
     author_email='ajstone@uwaterloo.ca',
-    description='Parallel queueing models for SimPy',
-    long_description=long_description,
-    long_description_content_type='text/markdown'
+    description='Parallel queueing models for SimPy'
 )
