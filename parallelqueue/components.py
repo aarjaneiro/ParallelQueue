@@ -29,10 +29,12 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
     :param choice: The queue which this replica is currently in
     :type choice: int
     """
-    try:
-        with queues[choice].request() as request:
+    with queues[choice].request() as request:
+        try:
             # Wait in queue
             Rename = f"{name}@{choice}"
+            if doPrint:
+                print(f'    ↳ {Rename}')
             yield request
             wait = env.now - arrive
             # at server
@@ -49,14 +51,14 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
                         c.interrupt()
                     except:
                         pass
-    except Interrupt:
-        if doPrint and Rename is not None:
-            try:
-                print(f'{Rename} - interrupted')  # This would be normal with replications
-            except RuntimeError:
-                Exception(f"Job error for {queues[choice].request()}")
-        else:
-            Exception(f"Request error for {queues[choice].request()}")
+        except Interrupt:
+            if doPrint and Rename is not None:
+                try:
+                    print(f"    ↳ {Rename} - interrupted")  # This would be normal with replications
+                except RuntimeError:
+                    Exception(f"Job error for {queues[choice].request()}")
+            else:
+                Exception(f"Request error for {queues[choice].request()}")
 
 
 def ExpJob(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, queues, choice, **kwargs):
@@ -104,7 +106,7 @@ def ExpJob(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, 
                         pass
     except Interrupt:
         if doPrint:
-            print(f'{Rename} - interrupted')
+            print(f"    ↳ {Rename} - interrupted")
 
 
 def PoissonArrivals(system, env, number, interval, queues, **kwargs):
@@ -180,7 +182,8 @@ def JobRouter(system, env, name, queues, **kwargs):
         for i in Q_length:
             choices.append(i)
         choice = min(choices)
-        Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice, **kwargs)
+        c = Job(system.doPrint, system.queuesOverTime, None, env, name, arrive, queues, choice, **kwargs)
+        env.process(c)
 
 
 def GeneralArrivals(system, env, number, queues, **kwargs):
@@ -197,7 +200,7 @@ def GeneralArrivals(system, env, number, queues, **kwargs):
     """
     if not system.infiniteJobs:
         for i in range(number):
-            c = JobRouter(system, env, 'Job%02d' % (i+1), queues, **kwargs)
+            c = JobRouter(system, env, 'Job%02d' % (i + 1), queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
