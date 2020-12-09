@@ -3,7 +3,7 @@ Basic building components (generators/processes) for parallel models. In general
 a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
 Arrivals->Router->Job/Servicing.
 """
-#   TODO: reimplement all base models in terms of the newly-added general distribution functions.
+#   TODO: Rewrite POI/EXP as implementations of the general functions Job/GeneralArrivals
 
 import random
 
@@ -29,30 +29,34 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
     :param choice: The queue which this replica is currently in
     :type choice: int
     """
-    while True:
-        try:
-            with queues[choice].request() as request:
-                # Wait in queue
-                Rename = f"{name}@{choice}"
-                yield request
-                wait = env.now - arrive
-                # at server
-                if doPrint:
-                    print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
-                tib = kwargs["Service"](kwargs["SArgs"])
-                yield env.timeout(tib)
-                queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-                if doPrint:
-                    print(f'{env.now:7.4f} {Rename}: Finished')
-                if replicaDict:
-                    for c in replicaDict[name]:
-                        try:
-                            c.interrupt()
-                        except:
-                            pass
-        except Interrupt:
+    try:
+        with queues[choice].request() as request:
+            # Wait in queue
+            Rename = f"{name}@{choice}"
+            yield request
+            wait = env.now - arrive
+            # at server
             if doPrint:
-                print(f'{Rename} - interrupted')
+                print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
+            tib = kwargs["Service"](kwargs["SArgs"])
+            yield env.timeout(tib)
+            queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+            if doPrint:
+                print(f'{env.now:7.4f} {Rename}: Finished')
+            if replicaDict is not None:
+                for c in replicaDict[name]:
+                    try:
+                        c.interrupt()
+                    except:
+                        pass
+    except Interrupt:
+        if doPrint and Rename is not None:
+            try:
+                print(f'{Rename} - interrupted')  # This would be normal with replications
+            except RuntimeError:
+                Exception(f"Job error for {queues[choice].request()}")
+        else:
+            Exception(f"Request error for {queues[choice].request()}")
 
 
 def ExpJob(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, queues, choice, **kwargs):
@@ -78,37 +82,35 @@ def ExpJob(doPrint, meanServer, queuesOverTime, replicaDict, env, name, arrive, 
     """
     if kwargs["Service"]:
         print("WARNING: kwargs given are ignored in the current context!")
-    while True:
-        try:
-            with queues[choice].request() as request:
-                # Wait in queue
-                Rename = f"{name}@{choice}"
-                yield request
-                wait = env.now - arrive
-                # at server
-                if doPrint:
-                    print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
-                tib = random.expovariate(1.0 / meanServer)
-                yield env.timeout(tib)
-                queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-                if doPrint:
-                    print(f'{env.now:7.4f} {Rename}: Finished')
-                if replicaDict:
-                    for c in replicaDict[name]:
-                        try:
-                            c.interrupt()
-                        except:
-                            pass
-        except Interrupt:
+    try:
+        with queues[choice].request() as request:
+            # Wait in queue
+            Rename = f"{name}@{choice}"
+            yield request
+            wait = env.now - arrive
+            # at server
             if doPrint:
-                print(f'{Rename} - interrupted')
+                print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
+            tib = random.expovariate(1.0 / meanServer)
+            yield env.timeout(tib)
+            queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+            if doPrint:
+                print(f'{env.now:7.4f} {Rename}: Finished')
+            if replicaDict:
+                for c in replicaDict[name]:
+                    try:
+                        c.interrupt()
+                    except:
+                        pass
+    except Interrupt:
+        if doPrint:
+            print(f'{Rename} - interrupted')
 
 
 def PoissonArrivals(system, env, number, interval, queues, **kwargs):
     """Poisson arrival process; interarrival times are generated by :math:`\\text{EXP}(\\frac{1}{\lambda})`
 
     :param system: System providing environment.
-    :type system: parallelqueue.base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param number: Max numberJobs of jobs if infiniteJobs is false.
@@ -154,7 +156,7 @@ def JobRouter(system, env, name, queues, **kwargs):
     choices = []
     if system.ReplicaDict is not None:  # Replication chosen
         if system.r:
-         for i, value in Q_length.items():
+            for i, value in Q_length.items():
                 if value <= system.r:
                     choices.append(i)  # the chosen queue numberJobs
         else:
@@ -195,15 +197,14 @@ def GeneralArrivals(system, env, number, queues, **kwargs):
     """
     if not system.infiniteJobs:
         for i in range(number):
-            c = JobRouter(system, env, 'Job%02d' % i, queues, **kwargs)
+            c = JobRouter(system, env, 'Job%02d' % (i+1), queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
     else:
         while True:  # referring to until not being passed
-            i = number
             number += 1
-            c = JobRouter(system, env, 'Job%02d' % i, queues, **kwargs)
+            c = JobRouter(system, env, 'Job%02d' % number, queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
