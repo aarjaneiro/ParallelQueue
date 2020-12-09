@@ -7,8 +7,8 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='ParallelQueue',
-    version='0.0.3',
-    packages=['parallelqueue', 'parallelqueue.components', 'parallelqueue.base_models'],
+    version='0.0.5',
+    packages=['parallelqueue'],
     url='',
     license='MIT',
     author='Aaron Janeiro Stone',
