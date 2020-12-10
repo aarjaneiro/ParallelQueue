@@ -32,3 +32,21 @@ Interested in Contributing?
 ---------------------------
 Do feel free to write an issue or submit a PR! If you are interested co-maintaining this package with me, please email me at
 ajstone@uwaterloo.ca (merely include a brief description of your familiarity with Python and Queueing Theory).
+
+
+References
+----------
+    Heavy Traffic Analysis of the Mean Response Time for 
+    Load Balancing Policies in the Mean Field Regime
+        Tim Hellemans, Benny Van Houdt (2020)
+        https://arxiv.org/abs/2004.00876
+
+    Redundancy-d:The Power of d Choices for Redundancy
+        Kristen Gardner, Mor Harchol-Balter, Alan Scheller-Wolf,
+        Mark Velednitsky, Samuel Zbarsky (2020)
+        https://doi.org/10.1287/opre.2016.1582
+
+Release Notes
+-------------
+0.0.6 will likely be the only release for the next few weeks. 
+Next release is likely to include some of the above goals and monitoring tools.

@@ -10,17 +10,22 @@ To start, let us run our system until either 30 customers are generated and comp
 
 .. code-block:: python
 
-    from parallelqueue.base_models import ParallelQueueSystem
-    sim = ParallelQueueSystem(numberJobs=30, maxTime=400, meanServer=20, arrivalMean=10, seed=12345, doPrint=True,
-    d=1,            # We choose exactly one queue per job
-    parallelism=2,  # There are a total of two queues to choose from per job
-    df = True       # returns a dataframe
-    ).RunSim        # Runs the simulation
+    from parallelqueue.base_models import JSQd
+    from random import expovariate
+
+    sim = JSQd(parallelism=2, seed=123, d=1, Arrival=expovariate, AArgs=0.10,
+                Service=expovariate, SArgs=0.12, maxTime=400,
+                numberJobs=30, infiniteJobs=False,
+                df=True # specifying that we want a df to be made!
+                )
+    # Note that because numberJobs is conditional on infiniteJobs being false,
+    # we manually specify so before running the simulation.
+    sim.RunSim()
 
 Now, with our dataframe, we can visualize the queue loads over time by running:
 
     .. code-block:: python
 
         from matplotlib import pyplot as plt
-        sim.plot()
+        sim.DataFrame.plot()
         plt.show()
