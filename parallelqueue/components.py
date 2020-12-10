@@ -155,8 +155,8 @@ def JobRouter(system, env, name, queues, **kwargs):
     arrive = env.now
     Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, queues)}
     system.queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-    choices = []
     if system.ReplicaDict is not None:  # Replication chosen
+        choices = []
         if system.r:
             for i, value in Q_length.items():
                 if value <= system.r:
@@ -179,8 +179,7 @@ def JobRouter(system, env, name, queues, **kwargs):
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
-        for i in Q_length:
-            choices.append(i)
+        choices = [i for i in Q_length]
         choice = min(choices)
         c = Job(system.doPrint, system.queuesOverTime, None, env, name, arrive, queues, choice, **kwargs)
         env.process(c)

@@ -37,6 +37,18 @@ class ParallelQueueSystem:
             Service=random.expovariate, SArgs=1)
         sim.RunSim()
 
+    References
+    ----------
+    Heavy Traffic Analysis of the Mean Response Time for Load Balancing Policies in the Mean Field Regime
+            Tim Hellemans, Benny Van Houdt (2020)
+            https://arxiv.org/abs/2004.00876
+
+    Redundancy-d:The Power of d Choices for Redundancy
+            Kristen Gardner, Mor Harchol-Balter, Alan Scheller-Wolf,
+            Mark Velednitsky, Samuel Zbarsky (2020)
+            https://doi.org/10.1287/opre.2016.1582
+
+
     """
 
     def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, df=False,
