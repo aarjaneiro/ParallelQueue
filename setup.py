@@ -10,7 +10,6 @@ setup(
     version='0.0.6.2',
     packages=['parallelqueue'],
     url='https://github.com/aarjaneiro/ParallelQueue',
-    project_urls='https://parallelqueue.readthedocs.io/en/latest/',
     license='MIT',
     author='Aaron Janeiro Stone',
     author_email='ajstone@uwaterloo.ca',

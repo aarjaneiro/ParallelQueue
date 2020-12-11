@@ -97,7 +97,7 @@ class ParallelQueueSystem:
 
     @staticmethod
     def QueueSelector(d, parallelism, counters):
-        if d != parallelism:
+        if d != parallelism:  # Separation necessary to reproduce SimPy base results (for same seed).
             return random.sample(range(len(counters)), d)
         else:
             return range(parallelism)
