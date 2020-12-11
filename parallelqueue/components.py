@@ -3,7 +3,7 @@ Basic building components (generators/processes) for parallel models. In general
 a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
 Arrivals->Router->Job/Servicing.
 """
-#   TODO: Rewrite POI/EXP as implementations of the general functions Job/GeneralArrivals
+#   TODO: Rewrite POI/EXP as implementations of the general functions Job/Arrivals
 
 from simpy import Interrupt
 
@@ -104,7 +104,7 @@ def JobRouter(system, env, name, queues, **kwargs):
         env.process(c)
 
 
-def GeneralArrivals(system, env, number, queues, **kwargs):
+def Arrivals(system, env, number, queues, **kwargs):
     """General arrival process; interarrival times are defined by the given distribution
 
     :param system: System providing environment.

@@ -4,7 +4,7 @@ from warnings import warn
 import pandas as pd
 from simpy import Environment, Resource
 
-from parallelqueue.components import GeneralArrivals
+from parallelqueue.components import Arrivals
 
 
 class ParallelQueueSystem:
@@ -77,8 +77,8 @@ class ParallelQueueSystem:
         env = Environment()
         queues = {i: Resource(env, capacity=1) for i in range(self.parallelism)}
 
-        env.process(GeneralArrivals(system=self, env=env, number=self.Number,
-                                    queues=queues, **self.kwargs))
+        env.process(Arrivals(system=self, env=env, number=self.Number,
+                             queues=queues, **self.kwargs))
         print(f'\n Running simulation with seed {self.seed}... \n')
         if self.maxTime is not None:
             env.run(until=self.maxTime)
