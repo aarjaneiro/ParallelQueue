@@ -68,7 +68,7 @@ class ParallelQueueSystem:
         self.maxTime = maxTime
         self.ReplicaDict = {} if Replicas is True else None
         self.Number = 0 if self.infiniteJobs else numberJobs
-        self.queuesOverTime = []
+        self.queuesOverTime = [] if df is True else None
         self.df = df
         self.kwargs = kwargs
 
@@ -96,8 +96,11 @@ class ParallelQueueSystem:
         return len(R.put_queue) + len(R.users)
 
     @staticmethod
-    def QueueSelector(d, counters):
-        return random.sample(range(len(counters)), d)
+    def QueueSelector(d, parallelism, counters):
+        if d != parallelism:
+            return random.sample(range(len(counters)), d)
+        else:
+            return range(parallelism)
 
     @property
     def DataFrame(self):

@@ -40,7 +40,8 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
                 print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
             tib = kwargs["Service"](kwargs["SArgs"])
             yield env.timeout(tib)
-            queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+            if queuesOverTime is not None:
+                queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
             if doPrint:
                 print(f'{env.now:7.4f} {Rename}: Finished')
             if replicaDict is not None:
@@ -72,8 +73,9 @@ def JobRouter(system, env, name, queues, **kwargs):
     :type queues: List[simpy.Resource]
     """
     arrive = env.now
-    Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, queues)}
-    system.queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+    Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
+    if system.queuesOverTime is not None:
+        system.queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
     if system.ReplicaDict is not None:  # Replication chosen
         choices = []
         if system.r:
@@ -98,8 +100,7 @@ def JobRouter(system, env, name, queues, **kwargs):
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
-        choices = [i for i in Q_length]
-        choice = min(choices)
+        choice = [k for k, v in sorted(Q_length.items(), key=lambda item: item[1])][0]
         c = Job(system.doPrint, system.queuesOverTime, None, env, name, arrive, queues, choice, **kwargs)
         env.process(c)
 

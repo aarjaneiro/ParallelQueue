@@ -4,6 +4,9 @@ except:
     print("Warning: Please install pytest to run all tests at once without needing to manually specify tests \n")
 import parallelqueue
 import random
+import io
+from contextlib import redirect_stdout
+from pure_simpy import SimTest
 
 
 def test_seed():
@@ -45,8 +48,22 @@ def test_runAll():
             base += 1
     assert base == 0
 
-# def test_bank():
-#     pq = parallelqueue.base_models.RedundancyQueueSystem(df=True, parallelism=1, seed=42,
-#                                         d=1, Arrival=random.expovariate, AArgs=1 / 10,
-#                                         Service=random.expovariate, SArgs=1 / 12, numberJobs=4, doPrint=True,
-#                                         infiniteJobs=False).RunSim()
+
+def simpy_test():
+    sim = parallelqueue.base_models.JSQd(df=True, numberJobs=5, infiniteJobs=False, parallelism=2, seed=12345,
+                                         d=2, Arrival=random.expovariate, AArgs=1,
+                                         Service=random.expovariate, SArgs=1 / 10, doPrint=True)
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        sim.RunSim()
+    ls = f.getvalue().split(" ")
+    test = []
+    for i in ls:
+        try:
+            test.append(float(i))
+        except:
+            pass
+    original = SimTest()
+    print(f"simpy_test result: Expect True, got {original == test}")
+    assert original == test
