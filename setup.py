@@ -7,7 +7,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='ParallelQueue',
-    version='0.0.6.1',
+    version='0.0.6.2',
     packages=['parallelqueue'],
     url='https://github.com/aarjaneiro/ParallelQueue',
     license='MIT',
