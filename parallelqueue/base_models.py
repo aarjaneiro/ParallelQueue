@@ -3,8 +3,8 @@ from warnings import warn
 
 import pandas as pd
 from simpy import Environment, Resource
-
-from parallelqueue.components import Arrivals
+import components
+import monitors
 
 
 class ParallelQueueSystem:
@@ -52,7 +52,7 @@ class ParallelQueueSystem:
 
     """
 
-    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, df=False,
+    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False,
                  infiniteJobs=True, Replicas=True, numberJobs=0, **kwargs):
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"
@@ -68,17 +68,21 @@ class ParallelQueueSystem:
         self.maxTime = maxTime
         self.ReplicaDict = {} if Replicas is True else None
         self.Number = 0 if self.infiniteJobs else numberJobs
-        self.queuesOverTime = [] if df is True else None
-        self.df = df
         self.kwargs = kwargs
+        self.MonitorHolder = {} if "Monitors" in self.kwargs is not None else None
+
+        if self.MonitorHolder is not None:
+            for monitor in self.kwargs["Monitors"]:
+                m = monitor()  # initialize
+                self.MonitorHolder[m.Name] = m
 
     def __SimManager(self):
         random.seed(self.seed)
         env = Environment()
         queues = {i: Resource(env, capacity=1) for i in range(self.parallelism)}
 
-        env.process(Arrivals(system=self, env=env, number=self.Number,
-                             queues=queues, **self.kwargs))
+        env.process(components.Arrivals(system=self, env=env, number=self.Number,
+                                        queues=queues, **self.kwargs))
         print(f'\n Running simulation with seed {self.seed}... \n')
         if self.maxTime is not None:
             env.run(until=self.maxTime)
@@ -104,13 +108,19 @@ class ParallelQueueSystem:
 
     @property
     def DataFrame(self):
-        if self.df:
-            return pd.DataFrame(self.queuesOverTime)
+        if "TimeQueueData" in self.MonitorHolder:
+            return pd.DataFrame(self.MonitorHolder["TimeQueueData"].Data)
+        else:
+            raise Exception("Error: 'TimeQueueData' must be monitored!")
+
+    @property
+    def MonitorOutput(self):
+        return {name: monitor.Data for name, monitor in self.MonitorHolder.items()}
 
 
 # New 0.0.5 - Base models rewritten with same base class
-def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, r=None, maxTime=None, doPrint=False,
-                          df=False, infiniteJobs=True, numberJobs=0):
+def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None, doPrint=False,
+                          infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join while awaiting
     service. After completing service, each job and its replicas are disposed of.
@@ -142,13 +152,13 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
         sim.RunSim()
 
     """
-    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs}  # Pack to use as argument
+    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors}  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               df=df, infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
+                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
 
-def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, r=None, maxTime=None, doPrint=False,
-         df=False, infiniteJobs=True, numberJobs=0):
+def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None, doPrint=False,
+         infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for each arriving job.
 
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
@@ -165,6 +175,6 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, r=None, maxTime=N
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
     """
-    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs}  # Pack to use as argument
+    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors}  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               df=df, infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
+                            infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)

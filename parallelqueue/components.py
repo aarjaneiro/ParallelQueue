@@ -8,9 +8,11 @@ Arrivals->Router->Job/Servicing.
 from simpy import Interrupt
 
 
-def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice, **kwargs):
+def Job(system, env, name, arrive, queues, choice, **kwargs):
     """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after routing.
 
+    :param system: System providing environment.
+    :type system: parallelqueue.base_models.ParallelQueueSystem
     :param doPrint: If true, each event will trigger a statement to be printed.
     :param queuesOverTime: A set of queues passed by the simulation manager representing the time-evolution of the system.
     :type queuesOverTime: List[simpy.Resource]
@@ -31,29 +33,32 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
         try:
             # Wait in queue
             Rename = f"{name}@{choice}"
-            if doPrint:
+            if system.doPrint:
                 print(f'    ↳ {Rename}')
             yield request
             wait = env.now - arrive
             # at server
-            if doPrint:
+            if system.doPrint:
                 print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
             tib = kwargs["Service"](kwargs["SArgs"])
             yield env.timeout(tib)
-            if queuesOverTime is not None:
-                queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-            if doPrint:
+            if system.doPrint:
                 print(f'{env.now:7.4f} {Rename}: Finished')
-            if replicaDict is not None:
-                for c in replicaDict[name]:
+            if system.ReplicaDict is not None:
+                for c in system.ReplicaDict[name]:
                     try:
                         c.interrupt()
                     except:
                         pass
+            if system.MonitorHolder is not None:
+                inputs = {"system": system, "env": env, "name": name, "queues": queues,
+                          "replicas": system.ReplicaDict}
+                for name, monitor in system.MonitorHolder.items():
+                    monitor.Add(inputs)
         except Interrupt:
-            if doPrint and Rename is not None:
+            if system.doPrint and Rename is not None:
                 try:
-                    print(f"    ↳ {Rename} - interrupted")  # This would be normal with replications
+                    print(f"    ↳ {Rename} - Interrupted")  # This would be normal with replications
                 except RuntimeError:
                     Exception(f"Job error for {queues[choice].request()}")
             else:
@@ -73,35 +78,47 @@ def JobRouter(system, env, name, queues, **kwargs):
     :type queues: List[simpy.Resource]
     """
     arrive = env.now
-    Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
-    if system.queuesOverTime is not None:
-        system.queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+    parsed = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
+    if system.MonitorHolder is not None:
+        inputs = {"system": system, "env": env, "name": name, "queues": queues, "parsed": parsed}
+        for name, monitor in system.MonitorHolder.items():
+            monitor.Add(inputs)
+
     if system.ReplicaDict is not None:  # Replication chosen
         choices = []
         if system.r:
-            for i, value in Q_length.items():
+            for i, value in parsed.items():
                 if value <= system.r:
                     choices.append(i)  # the chosen queue numberJobs
         else:
-            for i in Q_length:
+            for i in parsed:
                 choices.append(i)  # For no threshold
         if len(choices) < 1:
-            choices = [list(Q_length.keys())[0]]  # random choice
+            choices = [list(parsed.keys())[0]]  # random choice
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
         for choice in choices:
-            c = Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice,
+            c = Job(system, env, name, arrive, queues, choice,
                     **kwargs)
-
             replicas.append(env.process(c))
         system.ReplicaDict[name] = replicas  # Add a while statement?
+        if system.MonitorHolder is not None:
+            inputs = {"system": system, "env": env, "name": name, "queues": queues, "parsed": parsed,
+                      "replicas": system.ReplicaDict, "choices": choices}
+            for name, monitor in system.MonitorHolder.items():
+                monitor.Add(inputs)
         yield from replicas
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
-        choice = [k for k, v in sorted(Q_length.items(), key=lambda item: item[1])][0]
-        c = Job(system.doPrint, system.queuesOverTime, None, env, name, arrive, queues, choice, **kwargs)
+        choice = [k for k, v in sorted(parsed.items(), key=lambda item: item[1])][0]
+        c = Job(system, env, name, arrive, queues, choice,
+                **kwargs)
+        if system.MonitorHolder is not None:
+            inputs = {"system": system, "env": env, "name": name, "queues": queues, "parsed": parsed, "choices": choice}
+            for name, monitor in system.MonitorHolder.items():
+                monitor.Add(inputs)
         env.process(c)
 
 
