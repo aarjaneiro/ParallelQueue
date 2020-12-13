@@ -4,8 +4,7 @@ from warnings import warn
 import pandas as pd
 from simpy import Environment, Resource
 
-import components
-import monitors
+from parallelqueue import components, monitors
 
 
 class ParallelQueueSystem:
