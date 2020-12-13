@@ -1,6 +1,7 @@
 """
 This module contains methods for monitoring and visualization. As simulations run, the `Monitor` class interacts with
-the main environment, gathering data at certain intervals. Moreover, the `Monitor` class was designed to be general enough
+the main environment, gathering data at certain intervals. Moreover, the `Monitor` class was designed to be general
+enough
 so that one can build their own by overriding its `Name` and its data-gathering `Add` function.
 """
 
@@ -31,7 +32,7 @@ class EmpiricalDistribution:
     def Calculate(self):
         return sum(self.IList) / len(self.IList)
 
-    def sm_calculation(self, side='left'):
+    def sm_calculation(self, side="left"):
         """
         Using statsmodels.
         """
@@ -63,7 +64,6 @@ class Monitor:
 
 
 class TimeQueueData(Monitor):
-
     def Add(self, MonitorInputs: dict):
         if {"env", "queues"} <= MonitorInputs.keys():  # Leaving system
             queues = MonitorInputs["queues"]
@@ -75,7 +75,6 @@ class TimeQueueData(Monitor):
 
 
 class ReplicaSets(Monitor):
-
     def Add(self, MonitorInputs: dict):
         if {"choices", "env", "name"} <= MonitorInputs.keys():
             time = MonitorInputs["env"].now
@@ -99,7 +98,7 @@ class JobTime(Monitor):
         self.dataHelper = {}
 
     def Add(self, MonitorInputs: dict):
-        if {"choices", "env", "name"} <= MonitorInputs.keys():  # Choices is dummy to ensure at router
+        if {"choices", "env", "name", } <= MonitorInputs.keys():  # Choices is dummy to ensure at router
             time = MonitorInputs["env"].now
             name = MonitorInputs["name"]
             self.dataHelper[name] = time

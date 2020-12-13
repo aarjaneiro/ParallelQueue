@@ -9,7 +9,8 @@ from simpy import Interrupt
 
 
 def Job(system, env, name, arrive, queues, choice, **kwargs):
-    """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after routing.
+    """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after
+    routing.
 
     :param system: System providing environment.
     :type system: base_models.ParallelQueueSystem
@@ -60,7 +61,8 @@ def Job(system, env, name, arrive, queues, choice, **kwargs):
 
 
 def JobRouter(system, env, name, queues, **kwargs):
-    """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each job and their replicas.
+    """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each
+    job and their replicas.
 
     :param system: System providing environment.
     :type system: base_models.ParallelQueueSystem
@@ -93,8 +95,7 @@ def JobRouter(system, env, name, queues, **kwargs):
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
         for choice in choices:
-            c = Job(system, env, name, arrive, queues, choice,
-                    **kwargs)
+            c = Job(system, env, name, arrive, queues, choice, **kwargs)
             replicas.append(env.process(c))
         system.ReplicaDict[name] = replicas  # Add a while statement?
         if system.MonitorHolder is not None:
@@ -106,8 +107,7 @@ def JobRouter(system, env, name, queues, **kwargs):
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
         choice = [k for k, v in sorted(parsed.items(), key=lambda item: item[1])][0]
-        c = Job(system, env, name, arrive, queues, choice,
-                **kwargs)
+        c = Job(system, env, name, arrive, queues, choice, **kwargs)
         if system.MonitorHolder is not None:
             inputs = locals()
             for monitor in system.MonitorHolder.values():

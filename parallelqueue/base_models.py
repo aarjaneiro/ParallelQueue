@@ -3,13 +3,16 @@ from warnings import warn
 
 import pandas as pd
 from simpy import Environment, Resource
+
 import components
 import monitors
 
 
 class ParallelQueueSystem:
-    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
-    itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join while awaiting
+    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join,
+    potentially replicating
+    itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
+    while awaiting
     service. After completing service, each job and its replicas are disposed of.
 
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
@@ -53,8 +56,8 @@ class ParallelQueueSystem:
 
     """
 
-    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False,
-                 infiniteJobs=True, Replicas=True, numberJobs=0, **kwargs):
+    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, infiniteJobs=True, Replicas=True,
+                 numberJobs=0, **kwargs, ):
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"
                  f"  Will generate {numberJobs} Job(s)!")
@@ -82,14 +85,15 @@ class ParallelQueueSystem:
         env = Environment()
         queues = {i: Resource(env, capacity=1) for i in range(self.parallelism)}
 
-        env.process(components.Arrivals(system=self, env=env, number=self.Number,
-                                        queues=queues, **self.kwargs))
-        print(f'\n Running simulation with seed {self.seed}... \n')
+        env.process(components.Arrivals(system=self, env=env, number=self.Number, queues=queues, **self.kwargs))
+        if self.doPrint:
+            print(f"\n Running simulation with seed {self.seed}... \n")
         if self.maxTime is not None:
             env.run(until=self.maxTime)
         else:
             env.run()
-        print('\n Done \n')
+        if self.doPrint:
+            print("\n Done \n")
 
     def RunSim(self):
         """Runs the simulation."""
@@ -121,10 +125,11 @@ class ParallelQueueSystem:
 
 # New 0.0.5 - Base models rewritten with same base class
 def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData],
-                          r=None, maxTime=None, doPrint=False,
-                          infiniteJobs=True, numberJobs=0):
-    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
-    itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join while awaiting
+                          r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0, ):
+    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join,
+    potentially replicating
+    itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
+    while awaiting
     service. After completing service, each job and its replicas are disposed of.
 
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
@@ -155,16 +160,17 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
         sim.RunSim()
 
     """
-    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs,
-              "Monitors": Monitors}  # Pack to use as argument
+    kwargs = {
+            "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
+            }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs, )
 
 
 def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None,
-         doPrint=False,
-         infiniteJobs=True, numberJobs=0):
-    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for each arriving job.
+         doPrint=False, infiniteJobs=True, numberJobs=0, ):
+    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for
+    each arriving job.
 
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
     :param numberJobs: Max number of jobs if infiniteJobs is False. Will be ignored if infiniteJobs is True.
@@ -181,7 +187,8 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     :param Monitors: Any monitor which overrides the methods of monitors.Monitor
     :type Monitors: monitors.Monitor
     """
-    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs,
-              "Monitors": Monitors}  # Pack to use as argument
+    kwargs = {
+            "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
+            }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs, )
