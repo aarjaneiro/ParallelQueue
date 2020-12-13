@@ -51,9 +51,8 @@ def Job(system, env, name, arrive, queues, choice, **kwargs):
                     except:
                         pass
             if system.MonitorHolder is not None:
-                inputs = {"system": system, "env": env, "name": name, "queues": queues,
-                          "replicas": system.ReplicaDict}
-                for name, monitor in system.MonitorHolder.items():
+                inputs = locals()
+                for monitor in system.MonitorHolder.values():
                     monitor.Add(inputs)
         except Interrupt:
             if system.doPrint and Rename is not None:
@@ -80,8 +79,8 @@ def JobRouter(system, env, name, queues, **kwargs):
     arrive = env.now
     parsed = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
     if system.MonitorHolder is not None:
-        inputs = {"system": system, "env": env, "name": name, "queues": queues, "parsed": parsed}
-        for name, monitor in system.MonitorHolder.items():
+        inputs = locals()
+        for monitor in system.MonitorHolder.values():
             monitor.Add(inputs)
 
     if system.ReplicaDict is not None:  # Replication chosen
@@ -104,9 +103,8 @@ def JobRouter(system, env, name, queues, **kwargs):
             replicas.append(env.process(c))
         system.ReplicaDict[name] = replicas  # Add a while statement?
         if system.MonitorHolder is not None:
-            inputs = {"system": system, "env": env, "name": name, "queues": queues, "parsed": parsed,
-                      "replicas": system.ReplicaDict, "choices": choices}
-            for name, monitor in system.MonitorHolder.items():
+            inputs = locals()
+            for monitor in system.MonitorHolder.values():
                 monitor.Add(inputs)
         yield from replicas
     else:  # Shortest queue case
@@ -116,8 +114,8 @@ def JobRouter(system, env, name, queues, **kwargs):
         c = Job(system, env, name, arrive, queues, choice,
                 **kwargs)
         if system.MonitorHolder is not None:
-            inputs = {"system": system, "env": env, "name": name, "queues": queues, "parsed": parsed, "choices": choice}
-            for name, monitor in system.MonitorHolder.items():
+            inputs = locals()
+            for monitor in system.MonitorHolder.values():
                 monitor.Add(inputs)
         env.process(c)
 

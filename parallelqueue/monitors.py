@@ -3,14 +3,11 @@ This module contains methods for monitoring and visualization. As simulations ru
 the main environment, gathering data at certain intervals. Moreover, the `Monitor` class was designed to be general enough
 so that one can build their own by overriding its `Name` and its data-gathering `Add` function.
 """
-from simpy import Process
 
 try:
     from statsmodels.distributions import ECDF
-except Exception:
-    print(f"Warning, {Exception}")
-
-from components import Job
+except:
+    print(f"Warning, EmpiricalDistribution.sm_calculation requires `statsmodels`")
 
 
 class EmpiricalDistribution:
@@ -51,7 +48,7 @@ class EmpiricalDistribution:
 # Base monitor class with overridable members.
 class Monitor:
     def __init__(self):
-        self.toData = []
+        self.toData = {}
 
     def Add(self, MonitorInputs: dict):
         return None
@@ -68,9 +65,9 @@ class Monitor:
 class TimeQueueData(Monitor):
 
     def Add(self, MonitorInputs: dict):
-        if "queues" in MonitorInputs:
+        if {"env", "queues"} <= MonitorInputs.keys():  # Leaving system
             queues = MonitorInputs["queues"]
-            self.toData.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+            self.toData[MonitorInputs["env"].now] = {i: len(queues[i].put_queue) for i in range(len(queues))}
 
     @property
     def Name(self):
@@ -80,10 +77,40 @@ class TimeQueueData(Monitor):
 class ReplicaSets(Monitor):
 
     def Add(self, MonitorInputs: dict):
-        if {"choices", "env"} <= MonitorInputs.keys():
-            rep = MonitorInputs["choices"]
+        if {"choices", "env", "name"} <= MonitorInputs.keys():
             time = MonitorInputs["env"].now
-            self.toData.append({time: rep})
+            name = MonitorInputs["name"]
+            self.toData[name] = {"choices": MonitorInputs["choices"], "entry": time}
+
+        elif {"env", "name"} <= MonitorInputs.keys():  # Leaving system
+            time = MonitorInputs["env"].now
+            name = MonitorInputs["name"]
+            if name in self.toData.keys():
+                self.toData[name]["exit"] = time
+
+    @property
+    def Name(self):
+        return "ReplicaSets"
+
+
+class JobTime(Monitor):
+    def __init__(self):
+        super().__init__()
+        self.dataHelper = {}
+        self.toData = []
+
+    def Add(self, MonitorInputs: dict):
+        if {"choices", "env", "name"} <= MonitorInputs.keys():  # Choices is dummy to ensure at router
+            time = MonitorInputs["env"].now
+            name = MonitorInputs["name"]
+            self.dataHelper[name] = time
+
+        elif {"env", "name"} <= MonitorInputs.keys():  # Leaving system
+            time = MonitorInputs["env"].now
+            name = MonitorInputs["name"]
+            if name in self.dataHelper.keys():
+                self.toData.append(time - self.dataHelper[name])
+                self.dataHelper.pop(name)  # Clear space
 
     @property
     def Name(self):
