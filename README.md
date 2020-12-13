@@ -33,6 +33,7 @@ Interested in Contributing?
 Do feel free to write an issue or submit a PR! If you are interested co-maintaining this package with me, please email me at
 ajstone@uwaterloo.ca (merely include a brief description of your familiarity with Python and Queueing Theory).
 
+Also, be sure to look into the development branches!
 
 References
 ----------
@@ -43,7 +44,7 @@ References
 
     Redundancy-d:The Power of d Choices for Redundancy
         Kristen Gardner, Mor Harchol-Balter, Alan Scheller-Wolf,
-        Mark Velednitsky, Samuel Zbarsky (2020)
+        Mark Velednitsky, Samuel Zbarsky (2015)
         https://doi.org/10.1287/opre.2016.1582
 
 Release Notes
