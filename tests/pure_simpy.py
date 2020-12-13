@@ -13,10 +13,11 @@ Scenario:
 By Aaron Janeiro Stone -- Modified from my Medium Article:
 https://medium.com/swlh/simulating-a-parallel-queueing-system-with-simpy-6b7fcb6b1ca1
 """
-from simpy import *
-import random
 import io
+import random
 from contextlib import redirect_stdout
+
+from simpy import *
 
 
 def RunSim():

@@ -1,13 +1,9 @@
-from parallelqueue import base_models
+import io
+import random
+from contextlib import redirect_stdout
 from unittest import TestCase
 
-try:
-    import pytest
-except:
-    print("Warning: Please install pytest to run all tests at once without needing to manually specify tests \n")
-import random
-import io
-from contextlib import redirect_stdout
+from parallelqueue import base_models
 from pure_simpy import SimTest
 
 

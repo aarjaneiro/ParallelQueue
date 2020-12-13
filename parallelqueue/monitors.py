@@ -97,7 +97,6 @@ class JobTime(Monitor):
     def __init__(self):
         super().__init__()
         self.dataHelper = {}
-        self.toData = []
 
     def Add(self, MonitorInputs: dict):
         if {"choices", "env", "name"} <= MonitorInputs.keys():  # Choices is dummy to ensure at router
@@ -109,7 +108,7 @@ class JobTime(Monitor):
             time = MonitorInputs["env"].now
             name = MonitorInputs["name"]
             if name in self.dataHelper.keys():
-                self.toData.append(time - self.dataHelper[name])
+                self.toData[name] = time - self.dataHelper[name]
                 self.dataHelper.pop(name)  # Clear space
 
     @property

@@ -12,12 +12,7 @@ def Job(system, env, name, arrive, queues, choice, **kwargs):
     """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after routing.
 
     :param system: System providing environment.
-    :type system: parallelqueue.base_models.ParallelQueueSystem
-    :param doPrint: If true, each event will trigger a statement to be printed.
-    :param queuesOverTime: A set of queues passed by the simulation manager representing the time-evolution of the system.
-    :type queuesOverTime: List[simpy.Resource]
-    :param replicaDict: A set of a job and its replications, of which this generator itself is a member of.
-    :type replicaDict: {str: List[simpy.Process]}
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param name: Identifier for the job.
@@ -68,7 +63,7 @@ def JobRouter(system, env, name, queues, **kwargs):
     """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each job and their replicas.
 
     :param system: System providing environment.
-    :type system: parallelqueue.base_models.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation.
     :type env: simpy.Environment
     :param name: Identifier for the job.
@@ -124,7 +119,7 @@ def Arrivals(system, env, number, queues, **kwargs):
     """General arrival process; interarrival times are defined by the given distribution
 
     :param system: System providing environment.
-    :type system: parallelqueue.base_models.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param number: Max numberJobs of jobs if infiniteJobs is false.

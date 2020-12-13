@@ -25,6 +25,7 @@ class ParallelQueueSystem:
     :param AArgs: parameters needed by the function.
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
+    :param Monitors: Any monitor which overrides the methods of monitors.Monitor
 
     Example
     -------
@@ -46,7 +47,7 @@ class ParallelQueueSystem:
 
     Redundancy-d:The Power of d Choices for Redundancy
             Kristen Gardner, Mor Harchol-Balter, Alan Scheller-Wolf,
-            Mark Velednitsky, Samuel Zbarsky (2020)
+            Mark Velednitsky, Samuel Zbarsky (2017)
             https://doi.org/10.1287/opre.2016.1582
 
 
@@ -119,7 +120,8 @@ class ParallelQueueSystem:
 
 
 # New 0.0.5 - Base models rewritten with same base class
-def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None, doPrint=False,
+def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData],
+                          r=None, maxTime=None, doPrint=False,
                           infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join, potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join while awaiting
@@ -131,13 +133,14 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     :param seed: Random number generation seed.
     :param r: Threshold. Should be set to an integer, defaulting to :code:`None` otherwise.
     :param infiniteJobs: If true, there will be no upper limit for the number of jobs generated.
-    :param df: Whether or not a pandas.DataFrame of the queue sizes over time should be returned.
     :param d: Number of queues to parse.
     :param doPrint: If true, each event will trigger a statement to be printed.
     :param Arrival: A kwarg specifying the arrival distribution to use (a function).
     :param AArgs: parameters needed by the function.
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
+    :param Monitors: Any monitor which overrides the methods of monitors.Monitor
+    :type Monitors: monitors.Monitor
 
     Example
     -------
@@ -152,12 +155,14 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
         sim.RunSim()
 
     """
-    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors}  # Pack to use as argument
+    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs,
+              "Monitors": Monitors}  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
 
-def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None, doPrint=False,
+def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None,
+         doPrint=False,
          infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for each arriving job.
 
@@ -167,14 +172,16 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     :param seed: Random number generation seed.
     :param r: Threshold. Should be set to an integer, defaulting to :code:`None` otherwise.
     :param infiniteJobs: If true, there will be no upper limit for the number of jobs generated.
-    :param df: Whether or not a pandas.DataFrame of the queue sizes over time should be returned.
     :param d: Number of queues to parse.
     :param doPrint: If true, each event will trigger a statement to be printed.
     :param Arrival: A kwarg specifying the arrival distribution to use (a function).
     :param AArgs: parameters needed by the function.
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
+    :param Monitors: Any monitor which overrides the methods of monitors.Monitor
+    :type Monitors: monitors.Monitor
     """
-    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors}  # Pack to use as argument
+    kwargs = {"Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs,
+              "Monitors": Monitors}  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                            infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
