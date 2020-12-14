@@ -3,7 +3,7 @@ Basic building components (generators/processes) for parallel models. In general
 a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
 Arrivals->Router->Job/Servicing.
 """
-#   TODO: Rewrite POI/EXP as implementations of the general functions Job/Arrivals
+#   TODO: Components → Classes with overridable segments corresponding to current Monitor checks
 
 import random
 
@@ -35,13 +35,14 @@ def Job(system, env, name, arrive, queues, choice, **kwargs):
                 print(f'    ↳ {Rename}')
             yield request
             wait = env.now - arrive
-            # at server
+            # at server ⇒ Next job waits until finished.
             if system.doPrint:
                 print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
             tib = kwargs["Service"](kwargs["SArgs"])
             yield env.timeout(tib)
+            finish = env.now - arrive
             if system.doPrint:
-                print(f'{env.now:7.4f} {Rename}: Finished')
+                print(f'{env.now:7.4f} {Rename}: Finished — Total {finish:2.3f}')
             if system.ReplicaDict is not None:
                 for c in system.ReplicaDict[name]:
                     try:
@@ -53,16 +54,17 @@ def Job(system, env, name, arrive, queues, choice, **kwargs):
                 for monitor in system.MonitorHolder.values():
                     monitor.Add(inputs)
         except Interrupt:
-            if system.doPrint and Rename is not None:
-                try:
-                    print(f"    ↳ {Rename} - Interrupted")  # This would be normal with replications
+            if Rename is not None:
+                try:  # similar: simpy/examples/machine_shop
+                    if system.doPrint:
+                        print(f"    ↳ {Rename} - Interrupted")  # This would be normal with replications
                 except RuntimeError:
                     Exception(f"Job error for {queues[choice].request()}")
             else:
                 Exception(f"Request error for {queues[choice].request()}")
 
 
-def JobRouter(system, env, name, queues, **kwargs):
+def Router(system, env, name, queues, **kwargs):
     """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each
     job and their replicas.
 
@@ -99,12 +101,12 @@ def JobRouter(system, env, name, queues, **kwargs):
         for choice in choices:
             c = Job(system, env, name, arrive, queues, choice, **kwargs)
             replicas.append(env.process(c))
-        system.ReplicaDict[name] = replicas  # Add a while statement?
+        system.ReplicaDict[name] = replicas
         if system.MonitorHolder is not None:
             inputs = locals()
             for monitor in system.MonitorHolder.values():
                 monitor.Add(inputs)
-        yield from replicas
+        yield from replicas  # Stronger than `for i in replicas: yield i` ∵ bijective
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
@@ -131,14 +133,14 @@ def Arrivals(system, env, number, queues, **kwargs):
     """
     if not system.infiniteJobs:
         for i in range(number):
-            c = JobRouter(system, env, 'Job%02d' % (i + 1), queues, **kwargs)
+            c = Router(system, env, 'Job%02d' % (i + 1), queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
     else:
         while True:  # referring to until not being passed
             number += 1
-            c = JobRouter(system, env, 'Job%02d' % number, queues, **kwargs)
+            c = Router(system, env, 'Job%02d' % number, queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)

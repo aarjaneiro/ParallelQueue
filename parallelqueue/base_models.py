@@ -8,7 +8,7 @@ from parallelqueue import components, monitors
 
 
 class ParallelQueueSystem:
-    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join,
+    """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
     while awaiting
@@ -112,10 +112,10 @@ class ParallelQueueSystem:
 
     @property
     def DataFrame(self):
-        if "TimeQueueData" in self.MonitorHolder:
-            return pd.DataFrame(self.MonitorHolder["TimeQueueData"].Data)
+        if "TimeQueueSize" in self.MonitorHolder:
+            return pd.DataFrame(self.MonitorHolder["TimeQueueSize"].Data)
         else:
-            raise Exception("Error: 'TimeQueueData' must be monitored!")
+            raise Exception("Error: 'TimeQueueSize' must be monitored!")
 
     @property
     def MonitorOutput(self):
@@ -123,9 +123,10 @@ class ParallelQueueSystem:
 
 
 # New 0.0.5 - Base models rewritten with same base class
-def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData],
+# TODO - reimplement as subclass for ParallelQueueSystem
+def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize],
                           r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0):
-    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join,
+    """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
     while awaiting
@@ -160,15 +161,16 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
 
     """
     kwargs = {
-            "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
-            }  # Pack to use as argument
+        "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
+    }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
 
-def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None,
+# TODO - reimplement as subclass for ParallelQueueSystem
+def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize], r=None, maxTime=None,
          doPrint=False, infiniteJobs=True, numberJobs=0):
-    """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for
+    """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join for
     each arriving job.
 
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
@@ -187,7 +189,7 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     :type Monitors: monitors.Monitor
     """
     kwargs = {
-            "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
-            }  # Pack to use as argument
+        "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
+    }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)

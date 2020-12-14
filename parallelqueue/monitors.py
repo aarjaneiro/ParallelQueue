@@ -5,49 +5,22 @@ enough
 so that one can build their own by overriding its `Name` and its data-gathering `Add` function.
 """
 
-try:
-    from statsmodels.distributions import ECDF
-except:
-    print(f"Warning, EmpiricalDistribution.sm_calculation requires `statsmodels`")
 
-
-class EmpiricalDistribution:
-    def __init__(self, Y, t):
-        """
-        .. math::
-
-            \\frac{1}{n} \\sum_{i=1}^{n}\\mathbb{1}_{X_{i} \\leq t}
-
-        :param Y: The random variable (in this case, queues). Let Size(Y) = X as in the usual definition.
-        :type Y: dict(Resource(Environment))
-        :param t: The variable for which :math:`\\mathbb{1}_{X_{i} \\leq t}` is calculated across all X.
-        :type t: float
-        :return: :math:`x \\in [0,1]`
-        :rtype: float
-
-        """
-        self.y = Y
-        self.IList = [1 if (i.queue + i.users) <= t else 0 for i in self.y]
-
-    def Calculate(self):
-        return sum(self.IList) / len(self.IList)
-
-    def sm_calculation(self, side="left"):
-        """
-        Using statsmodels.
-        """
-        return ECDF([i.queue + i.users for i in self.y], side)
-
-    @property
-    def I_List(self):
-        """
-        Returns the set of I's
-        """
-        return self.IList
-
+#   TODO: Introduce analysis class which can interact with Monitor interface
 
 # Base monitor class with overridable members.
 class Monitor:
+    """
+    Base class defining the behaviour of monitors over `ParallelQueue` models.
+    Unless overridden, the return of this class will be a `dict` of values.
+
+    Note
+    ----
+    In general, if you need data not provided by any one of the default implementations,
+    you would fare better by overriding elements of `Monitor` as needed. This is as
+    opposed to calling a collection of monitors which will then need to update frequently.
+    """
+
     def __init__(self):
         self.toData = {}
 
@@ -63,25 +36,33 @@ class Monitor:
         return None
 
 
-class TimeQueueData(Monitor):
-    def Add(self, MonitorInputs: dict):
-        if {"env", "queues"} <= MonitorInputs.keys():  # Leaving system
+class TimeQueueSize(Monitor):
+    """
+    Tracks queue sizes over time.
+    """
+
+    def Add(self, MonitorInputs: dict):  # Env always exists
+        if {"queues"} <= MonitorInputs.keys():  # Leaving system
             queues = MonitorInputs["queues"]
             self.toData[MonitorInputs["env"].now] = {i: len(queues[i].put_queue) for i in range(len(queues))}
 
     @property
     def Name(self):
-        return "TimeQueueData"
+        return "TimeQueueSize"
 
 
 class ReplicaSets(Monitor):
+    """
+    Tracks replica sets generated over time, along with their times of creation and disposal.
+    """
+
     def Add(self, MonitorInputs: dict):
-        if {"choices", "env", "name"} <= MonitorInputs.keys():
-            time = MonitorInputs["env"].now
+        if {"choices", "name"} <= MonitorInputs.keys():
+            time = MonitorInputs["env"].now  # Env always exists
             name = MonitorInputs["name"]
             self.toData[name] = {"choices": MonitorInputs["choices"], "entry": time}
 
-        elif {"env", "name"} <= MonitorInputs.keys():  # Leaving system
+        elif {"name"} <= MonitorInputs.keys():  # Leaving system
             time = MonitorInputs["env"].now
             name = MonitorInputs["name"]
             if name in self.toData.keys():
@@ -93,23 +74,45 @@ class ReplicaSets(Monitor):
 
 
 class JobTime(Monitor):
-    def __init__(self):
-        super().__init__()
-        self.dataHelper = {}
+    """
+    Tracks time of job entry and exit.
+    """
 
     def Add(self, MonitorInputs: dict):
-        if {"choices", "env", "name", } <= MonitorInputs.keys():  # Choices is dummy to ensure at router
-            time = MonitorInputs["env"].now
+        if {"arrive", "wait", "name"} <= MonitorInputs.keys():  # `wait` is a dummy to know @ server
             name = MonitorInputs["name"]
-            self.dataHelper[name] = time
-
-        elif {"env", "name"} <= MonitorInputs.keys():  # Leaving system
-            time = MonitorInputs["env"].now
-            name = MonitorInputs["name"]
-            if name in self.dataHelper.keys():
-                self.toData[name] = time - self.dataHelper[name]
-                self.dataHelper.pop(name)  # Clear space
+            self.toData[name] = {"entry": MonitorInputs["arrive"], "exit": MonitorInputs["env"].now}
 
     @property
     def Name(self):
-        return "ReplicaSets"
+        return "JobTime"
+
+
+class JobTotal(Monitor):
+    """
+    Tracks total time each job/set spends in system.
+    To get the mean time each job/set spends:
+
+    Example
+    -------
+
+    .. code-block:: python
+
+        from monitors import JobTotal
+        import pandas as pd
+        sim = base_models.RedundancyQueueSystem(maxTime=100.0, parallelism=10, seed=1234, d=2, Arrival=random.expovariate,
+                                      AArgs=0.5, Service=random.expovariate, SArgs=0.2, doPrint=True, Monitors = [JobTotal])
+        sim.RunSim()
+        totals = sim.MonitorOutput["JobTotal"]
+        mean = pd.Series(totals, index = totals.keys()).mean()
+
+    """
+
+    def Add(self, MonitorInputs: dict):
+        if {"finish", "name"} <= MonitorInputs.keys():
+            name = MonitorInputs["name"]
+            self.toData[name] = MonitorInputs["finish"]
+
+    @property
+    def Name(self):
+        return "JobTotal"
