@@ -5,14 +5,18 @@ Arrivals->Router->Job/Servicing.
 """
 #   TODO: Rewrite POI/EXP as implementations of the general functions Job/Arrivals
 
+import random
+
 from simpy import Interrupt
 
 
 def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice, **kwargs):
-    """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after routing.
+    """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after
+    routing.
 
     :param doPrint: If true, each event will trigger a statement to be printed.
-    :param queuesOverTime: A set of queues passed by the simulation manager representing the time-evolution of the system.
+    :param queuesOverTime: A set of queues passed by the simulation manager representing the time-evolution of the
+    system.
     :type queuesOverTime: List[simpy.Resource]
     :param replicaDict: A set of a job and its replications, of which this generator itself is a member of.
     :type replicaDict: {str: List[simpy.Process]}
@@ -61,7 +65,8 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
 
 
 def JobRouter(system, env, name, queues, **kwargs):
-    """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each job and their replicas.
+    """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each
+    job and their replicas.
 
     :param system: System providing environment.
     :type system: parallelqueue.base_models.ParallelQueueSystem
@@ -86,7 +91,7 @@ def JobRouter(system, env, name, queues, **kwargs):
             for i in Q_length:
                 choices.append(i)  # For no threshold
         if len(choices) < 1:
-            choices = [list(Q_length.keys())[0]]  # random choice
+            choices = random.sample(list(Q_length.keys()), 1)  # random choice
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
