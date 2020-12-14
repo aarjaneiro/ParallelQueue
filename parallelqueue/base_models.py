@@ -56,7 +56,7 @@ class ParallelQueueSystem:
     """
 
     def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, infiniteJobs=True, Replicas=True,
-                 numberJobs=0, **kwargs, ):
+                 numberJobs=0, **kwargs):
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"
                  f"  Will generate {numberJobs} Job(s)!")
@@ -124,7 +124,7 @@ class ParallelQueueSystem:
 
 # New 0.0.5 - Base models rewritten with same base class
 def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData],
-                          r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0, ):
+                          r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
@@ -163,11 +163,11 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
             "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
             }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs, )
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
 
 def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueData], r=None, maxTime=None,
-         doPrint=False, infiniteJobs=True, numberJobs=0, ):
+         doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a JobRouter chooses the smallest queue of d sampled (identical) queues to join for
     each arriving job.
 
@@ -190,4 +190,4 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
             "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
             }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs, )
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
