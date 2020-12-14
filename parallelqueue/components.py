@@ -5,6 +5,8 @@ Arrivals->Router->Job/Servicing.
 """
 #   TODO: Rewrite POI/EXP as implementations of the general functions Job/Arrivals
 
+import random
+
 from simpy import Interrupt
 
 
@@ -90,7 +92,7 @@ def JobRouter(system, env, name, queues, **kwargs):
             for i in parsed:
                 choices.append(i)  # For no threshold
         if len(choices) < 1:
-            choices = [list(parsed.keys())[0]]  # random choice
+            choices = random.sample(list(parsed.keys()), 1)  # random choice
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
