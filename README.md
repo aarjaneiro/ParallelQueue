@@ -49,5 +49,5 @@ References
 
 Release Notes
 -------------
-0.0.6 will likely be the only release for the next few weeks. 
-Next release is likely to include some of the above goals and monitoring tools.
+0.1.0.0 will likely be the only release for the next few weeks. 
+Next release is likely to include some of the above goals and parallelization tools.
