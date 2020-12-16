@@ -44,7 +44,7 @@ References
 
     Redundancy-d:The Power of d Choices for Redundancy
         Kristen Gardner, Mor Harchol-Balter, Alan Scheller-Wolf,
-        Mark Velednitsky, Samuel Zbarsky (2015)
+        Mark Velednitsky, Samuel Zbarsky (2017)
         https://doi.org/10.1287/opre.2016.1582
 
 Release Notes
