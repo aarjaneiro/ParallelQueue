@@ -3,23 +3,19 @@ Basic building components (generators/processes) for parallel models. In general
 a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
 Arrivals->Router->Job/Servicing.
 """
-#   TODO: Rewrite POI/EXP as implementations of the general functions Job/Arrivals
+#   TODO: Components → Classes with overridable segments corresponding to current Monitor checks
 
 import random
 
 from simpy import Interrupt
 
 
-def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice, **kwargs):
+def Job(system, env, name, arrive, queues, choice, **kwargs):
     """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after
     routing.
 
-    :param doPrint: If true, each event will trigger a statement to be printed.
-    :param queuesOverTime: A set of queues passed by the simulation manager representing the time-evolution of the
-    system.
-    :type queuesOverTime: List[simpy.Resource]
-    :param replicaDict: A set of a job and its replications, of which this generator itself is a member of.
-    :type replicaDict: {str: List[simpy.Process]}
+    :param system: System providing environment.
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param name: Identifier for the job.
@@ -35,41 +31,45 @@ def Job(doPrint, queuesOverTime, replicaDict, env, name, arrive, queues, choice,
         try:
             # Wait in queue
             Rename = f"{name}@{choice}"
-            if doPrint:
+            if system.doPrint:
                 print(f'    ↳ {Rename}')
             yield request
             wait = env.now - arrive
-            # at server
-            if doPrint:
+            # at server ⇒ Next job waits until finished.
+            if system.doPrint:
                 print(f'{env.now:7.4f} {Rename}: Waited {wait:6.3f}')
             tib = kwargs["Service"](kwargs["SArgs"])
             yield env.timeout(tib)
-            if queuesOverTime is not None:
-                queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
-            if doPrint:
-                print(f'{env.now:7.4f} {Rename}: Finished')
-            if replicaDict is not None:
-                for c in replicaDict[name]:
+            finish = env.now - arrive
+            if system.doPrint:
+                print(f'{env.now:7.4f} {Rename}: Finished — Total {finish:2.3f}')
+            if system.ReplicaDict is not None:
+                for c in system.ReplicaDict[name]:
                     try:
                         c.interrupt()
                     except:
                         pass
+            if system.MonitorHolder is not None:
+                inputs = locals()
+                for monitor in system.MonitorHolder.values():
+                    monitor.Add(inputs)
         except Interrupt:
-            if doPrint and Rename is not None:
-                try:
-                    print(f"    ↳ {Rename} - interrupted")  # This would be normal with replications
+            if Rename is not None:
+                try:  # similar: simpy/examples/machine_shop
+                    if system.doPrint:
+                        print(f"    ↳ {Rename} - Interrupted")  # This would be normal with replications
                 except RuntimeError:
                     Exception(f"Job error for {queues[choice].request()}")
             else:
                 Exception(f"Request error for {queues[choice].request()}")
 
 
-def JobRouter(system, env, name, queues, **kwargs):
+def Router(system, env, name, queues, **kwargs):
     """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each
     job and their replicas.
 
     :param system: System providing environment.
-    :type system: parallelqueue.base_models.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation.
     :type env: simpy.Environment
     :param name: Identifier for the job.
@@ -78,35 +78,44 @@ def JobRouter(system, env, name, queues, **kwargs):
     :type queues: List[simpy.Resource]
     """
     arrive = env.now
-    Q_length = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
-    if system.queuesOverTime is not None:
-        system.queuesOverTime.append({i: len(queues[i].put_queue) for i in range(len(queues))})
+    parsed = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
+    if system.MonitorHolder is not None:
+        inputs = locals()
+        for monitor in system.MonitorHolder.values():
+            monitor.Add(inputs)
+
     if system.ReplicaDict is not None:  # Replication chosen
         choices = []
         if system.r:
-            for i, value in Q_length.items():
+            for i, value in parsed.items():
                 if value <= system.r:
                     choices.append(i)  # the chosen queue numberJobs
         else:
-            for i in Q_length:
+            for i in parsed:
                 choices.append(i)  # For no threshold
         if len(choices) < 1:
-            choices = random.sample(list(Q_length.keys()), 1)  # random choice
+            choices = random.sample(list(parsed.keys()), 1)  # random choice
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival for {len(choices)} copies')
         replicas = []
         for choice in choices:
-            c = Job(system.doPrint, system.queuesOverTime, system.ReplicaDict, env, name, arrive, queues, choice,
-                    **kwargs)
-
+            c = Job(system, env, name, arrive, queues, choice, **kwargs)
             replicas.append(env.process(c))
-        system.ReplicaDict[name] = replicas  # Add a while statement?
-        yield from replicas
+        system.ReplicaDict[name] = replicas
+        if system.MonitorHolder is not None:
+            inputs = locals()
+            for monitor in system.MonitorHolder.values():
+                monitor.Add(inputs)
+        yield from replicas  # Stronger than `for i in replicas: yield i` ∵ bijective
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
-        choice = [k for k, v in sorted(Q_length.items(), key=lambda item: item[1])][0]
-        c = Job(system.doPrint, system.queuesOverTime, None, env, name, arrive, queues, choice, **kwargs)
+        choice = [k for k, v in sorted(parsed.items(), key=lambda item: item[1])][0]
+        c = Job(system, env, name, arrive, queues, choice, **kwargs)
+        if system.MonitorHolder is not None:
+            inputs = locals()
+            for monitor in system.MonitorHolder.values():
+                monitor.Add(inputs)
         env.process(c)
 
 
@@ -114,7 +123,7 @@ def Arrivals(system, env, number, queues, **kwargs):
     """General arrival process; interarrival times are defined by the given distribution
 
     :param system: System providing environment.
-    :type system: parallelqueue.base_models.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param number: Max numberJobs of jobs if infiniteJobs is false.
@@ -124,14 +133,14 @@ def Arrivals(system, env, number, queues, **kwargs):
     """
     if not system.infiniteJobs:
         for i in range(number):
-            c = JobRouter(system, env, 'Job%02d' % (i + 1), queues, **kwargs)
+            c = Router(system, env, 'Job%02d' % (i + 1), queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
     else:
         while True:  # referring to until not being passed
             number += 1
-            c = JobRouter(system, env, 'Job%02d' % number, queues, **kwargs)
+            c = Router(system, env, 'Job%02d' % number, queues, **kwargs)
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
