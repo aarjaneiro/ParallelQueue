@@ -113,7 +113,7 @@ class ParallelQueueSystem:
     @property
     def DataFrame(self):
         if "TimeQueueSize" in self.MonitorHolder:
-            return pd.DataFrame(self.MonitorHolder["TimeQueueSize"].Data)
+            return pd.DataFrame(self.MonitorHolder["TimeQueueSize"].Data).transpose()
         else:
             raise Exception("Error: 'TimeQueueSize' must be monitored!")
 

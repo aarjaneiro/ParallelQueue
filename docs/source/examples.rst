@@ -11,13 +11,13 @@ To start, let us run our system until either 30 customers are generated and comp
 .. code-block:: python
 
     from parallelqueue.base_models import JSQd
+    from parallelqueue.monitors import TimeQueueSize
     from random import expovariate
+
 
     sim = JSQd(parallelism=2, seed=123, d=1, Arrival=expovariate, AArgs=0.10,
                 Service=expovariate, SArgs=0.12, maxTime=400,
-                numberJobs=30, infiniteJobs=False,
-                df=True # specifying that we want a df to be made!
-                )
+                numberJobs=30, Modules=[TimeQueueSize])
     # Note that because numberJobs is conditional on infiniteJobs being false,
     # we manually specify so before running the simulation.
     sim.RunSim()
