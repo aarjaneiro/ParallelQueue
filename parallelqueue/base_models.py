@@ -100,18 +100,6 @@ class ParallelQueueSystem:
         """Runs the simulation."""
         self.__SimManager()
 
-    @staticmethod
-    def NoInSystem(R):
-        """Total numberJobs of Jobs in the resource R"""
-        return len(R.put_queue) + len(R.users)
-
-    @staticmethod
-    def QueueSelector(d, parallelism, counters):
-        if d != parallelism:  # Separation necessary to reproduce SimPy base results (for same seed).
-            return random.sample(range(len(counters)), d)
-        else:
-            return range(parallelism)
-
     @property
     def DataFrame(self):
         if "TimeQueueSize" in self.MonitorHolder:

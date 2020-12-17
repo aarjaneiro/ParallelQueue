@@ -1,6 +1,18 @@
 import random
 
 
+def NoInSystem(R):
+    """Total numberJobs of Jobs in the resource R"""
+    return len(R.put_queue) + len(R.users)
+
+
+def QueueSelector(d, parallelism, counters):
+    if d != parallelism:  # Separation necessary to reproduce SimPy base results (for same seed).
+        return random.sample(range(len(counters)), d)
+    else:
+        return range(parallelism)
+
+
 def DefaultRouter(job, system, env, name, queues, **kwargs):
     """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each
     job and their replicas.
@@ -16,7 +28,7 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
     :type queues: List[simpy.Resource]
     """
     arrive = env.now
-    parsed = {i: system.NoInSystem(queues[i]) for i in system.QueueSelector(system.d, system.parallelism, queues)}
+    parsed = {i: NoInSystem(queues[i]) for i in QueueSelector(system.d, system.parallelism, queues)}
     if system.MonitorHolder is not None:
         inputs = locals()
         for monitor in system.MonitorHolder.values():
