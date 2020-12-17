@@ -30,10 +30,16 @@ def RunSim():
         arrive = env.now
         Qlength = [NoInSystem(counters[i]) for i in range(len(counters))]
         print("%7.4f %s: Here I am. %s" % (env.now, name, Qlength))
+        choices =[]
         for i in range(len(Qlength)):
             if Qlength[i] in [0, min(Qlength)]:
-                choice = i  # the chosen queue number
-                break
+                choices.append(i)  # the chosen queue number; can be > 1
+
+        if len(choices) > 1:
+            choice = random.sample(choices, 1)[0]
+        else:
+            choice = choices[0]
+
         with counters[choice].request() as req:
             # Wait for the counter
             yield req

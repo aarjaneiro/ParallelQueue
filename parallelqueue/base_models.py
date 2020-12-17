@@ -4,7 +4,8 @@ from warnings import warn
 import pandas as pd
 from simpy import Environment, Resource
 
-from parallelqueue import components, monitors
+from network import Network
+from parallelqueue import network, monitors
 
 
 class ParallelQueueSystem:
@@ -28,6 +29,7 @@ class ParallelQueueSystem:
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
     :param Monitors: Any monitor which overrides the methods of monitors.Monitor
+    :param Network: Network class which defines the structure of the system.
 
     Example
     -------
@@ -56,7 +58,8 @@ class ParallelQueueSystem:
     """
 
     def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, infiniteJobs=True, Replicas=True,
-                 numberJobs=0, **kwargs):
+                 numberJobs=0, network=Network, **kwargs):
+        self.network = network
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"
                  f"  Will generate {numberJobs} Job(s)!")
@@ -83,8 +86,7 @@ class ParallelQueueSystem:
         random.seed(self.seed)
         env = Environment()
         queues = {i: Resource(env, capacity=1) for i in range(self.parallelism)}
-
-        env.process(components.Arrivals(system=self, env=env, number=self.Number, queues=queues, **self.kwargs))
+        env.process(self.network().Arrivals(system=self, env=env, number=self.Number, queues=queues, **self.kwargs))
         if self.doPrint:
             print(f"\n Running simulation with seed {self.seed}... \n")
         if self.maxTime is not None:
@@ -97,18 +99,6 @@ class ParallelQueueSystem:
     def RunSim(self):
         """Runs the simulation."""
         self.__SimManager()
-
-    @staticmethod
-    def NoInSystem(R):
-        """Total numberJobs of Jobs in the resource R"""
-        return len(R.put_queue) + len(R.users)
-
-    @staticmethod
-    def QueueSelector(d, parallelism, counters):
-        if d != parallelism:  # Separation necessary to reproduce SimPy base results (for same seed).
-            return random.sample(range(len(counters)), d)
-        else:
-            return range(parallelism)
 
     @property
     def DataFrame(self):
@@ -123,7 +113,6 @@ class ParallelQueueSystem:
 
 
 # New 0.0.5 - Base models rewritten with same base class
-# TODO - reimplement as subclass for ParallelQueueSystem
 def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize],
                           r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
@@ -167,7 +156,6 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
 
-# TODO - reimplement as subclass for ParallelQueueSystem
 def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize], r=None, maxTime=None,
          doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join for
