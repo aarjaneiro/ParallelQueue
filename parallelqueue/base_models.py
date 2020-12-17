@@ -4,8 +4,8 @@ from warnings import warn
 import pandas as pd
 from simpy import Environment, Resource
 
-from network import Network
-from parallelqueue import network, monitors
+from parallelqueue.network import Network
+from parallelqueue import monitors
 
 
 class ParallelQueueSystem:
