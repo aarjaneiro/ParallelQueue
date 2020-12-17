@@ -34,8 +34,8 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
         for monitor in system.MonitorHolder.values():
             monitor.Add(inputs)
 
+    choices = []
     if system.ReplicaDict is not None:  # Replication chosen
-        choices = []
         if system.r:
             for i, value in parsed.items():
                 if value <= system.r:
@@ -60,14 +60,10 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
-        choices = []
         for key, value in parsed.items():
             if value in [0, min(parsed.values())]:
                 choices.append(key)  # the chosen queue number; can be > 1
-        if len(choices) > 1:
-            choice = random.sample(choices, 1)[0]
-        else:
-            choice = choices[0]
+        choice = random.sample(choices, 1)[0] if len(choices) > 1 else choices[0]
         c = job(system, env, name, arrive, queues, choice, **kwargs)
         if system.MonitorHolder is not None:
             inputs = locals()
