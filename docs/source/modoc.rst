@@ -8,4 +8,5 @@ Module Documentation
 
     Model Components <basic>
     Standard Parallelization Models <submodules>
+    Monitors <monitors>
 
