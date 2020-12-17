@@ -5,7 +5,7 @@ Arrivals->Router->Job/Servicing.
 """
 from arrivals import DefaultArrivals
 from jobs import DefaultJob
-from router import DefaultRouter
+from routers import DefaultRouter
 
 
 class Network:
@@ -15,9 +15,10 @@ class Network:
     can be used to handle JSQd, Redundancy-d, and Threshold-(d,r) models.
     """
 
-    def __init__(self, system=None, env=None):
-        self.system = system
-        self.env = env
+    def __init__(self, **kwargs):
+        self.network_args = {}  # Allow user to pass anything they deem fit.
+        for k, v in kwargs.items():
+            self.network_args[k] = v
 
     @staticmethod
     def Job(system, env, name, arrive, queues, choice, **kwargs):
