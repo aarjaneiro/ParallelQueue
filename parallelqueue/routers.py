@@ -60,7 +60,14 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
     else:  # Shortest queue case
         if system.doPrint:
             print(f'{arrive:7.4f} {name}: Arrival')
-        choice = [k for k, v in sorted(parsed.items(), key=lambda item: item[1])][0]
+        choices = []
+        for key, value in parsed.items():
+            if value in [0, min(parsed.values())]:
+                choices.append(key)  # the chosen queue number; can be > 1
+        if len(choices) > 1:
+            choice = random.sample(choices, 1)[0]
+        else:
+            choice = choices[0]
         c = job(system, env, name, arrive, queues, choice, **kwargs)
         if system.MonitorHolder is not None:
             inputs = locals()

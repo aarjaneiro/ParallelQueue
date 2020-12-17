@@ -9,11 +9,13 @@ This repository hosts the "ParallelQueue" project which is currently in its earl
 This package aims to allow for easier implementation of novel parallel processing 
 approaches in Python DES packages (especially SimPy).
 
+>**WARNING**: The GitHub master build can be (and likely is) different from the PyPi build, being more up-to-date.
+For the time being, use the current **GitHub master branch** if starting a new project, using PyPi if and only if you require that particular
+version (e.g., for code stability as it is updated less-frequently). This disparity is likely to change with
+the maturity of this project which is still in early development.
+
 Installation
 ------------
-From PyPi:
-
-`pip install parallelqueue`
 
 From this repository:
 ```
@@ -21,6 +23,11 @@ git clone https://github.com/aarjaneiro/ParallelQueue
 cd ParallelQueue
 python setup.py install
 ```
+
+From PyPi (read Warning first!):
+
+`pip install parallelqueue`
+
 
 Current Goals
 -------------
