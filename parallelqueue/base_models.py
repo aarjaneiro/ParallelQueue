@@ -134,7 +134,7 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
     :param Monitors: Any monitor which overrides the methods of monitors.Monitor
-    :type Monitors: monitors.Monitor
+    :type Monitors: List[monitors.Monitor]
 
     Example
     -------
@@ -174,7 +174,7 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
     :param Monitors: Any monitor which overrides the methods of monitors.Monitor
-    :type Monitors: monitors.Monitor
+    :type Monitors: List[monitors.Monitor]
     """
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
