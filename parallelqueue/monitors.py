@@ -28,12 +28,12 @@ class Monitor:
         return None
 
     @property
-    def Data(self):
+    def Data(self) -> dict:
         return self.toData
 
     @property
-    def Name(self):
-        return None
+    def Name(self) -> str:
+        return ""
 
 
 class TimeQueueSize(Monitor):

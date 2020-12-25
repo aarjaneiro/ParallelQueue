@@ -1,9 +1,6 @@
-import io
-import random
-from contextlib import redirect_stdout
 from unittest import TestCase
 
-from parallelqueue import base_models
+from parallelqueue import base_models, monitors
 
 
 class TestModels(TestCase):
@@ -42,7 +39,7 @@ class TestModels(TestCase):
             except:
                 pass
         original = SimTest()
-        print(f"simpy_test result: Expect True, got {original == test}")
+        print(f"simpy_test result: Expect True, got {original[-1] == test[-2]}")
         assert original[-1] == test[-2]  # due to change in out
 
     def test_seed(self):
@@ -63,6 +60,18 @@ class TestModels(TestCase):
                 if df1.iloc[i, j] != df2.iloc[i, j]:
                     base += 1
         assert base == 0
+
+    def test_monitors(self):
+        # 1 seed should give 1 result across 2 initializations
+        base = 0
+        sim = base_models.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
+                               Arrival=random.expovariate, AArgs=0.5,
+                               Service=random.expovariate, SArgs=1,
+                               Monitors=[monitors.TimeQueueSize, monitors.JobTime, monitors.JobTotal,
+                                         monitors.ReplicaSets])
+        sim.RunSim()
+        df = sim.MonitorOutput
+        assert len(df) == 4
 
 
 #   For test_simpy
