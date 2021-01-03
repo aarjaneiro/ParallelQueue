@@ -4,8 +4,8 @@ from warnings import warn
 import pandas as pd
 from simpy import Environment, Resource
 
-from parallelqueue.network import Network
 from parallelqueue import monitors
+from parallelqueue.network import Network
 
 
 class ParallelQueueSystem:
@@ -82,7 +82,8 @@ class ParallelQueueSystem:
                 m = monitor()  # initialize
                 self.MonitorHolder[m.Name] = m
 
-    def __SimManager(self):
+    def __sim_manager__(self):
+        """Manages the simulation by initializing and running it using the user-specified parameters."""
         random.seed(self.seed)
         env = Environment()
         queues = {i: Resource(env, capacity=1) for i in range(self.parallelism)}
@@ -98,10 +99,11 @@ class ParallelQueueSystem:
 
     def RunSim(self):
         """Runs the simulation."""
-        self.__SimManager()
+        self.__sim_manager__()
 
     @property
     def DataFrame(self):
+        """If :code:`TimeQueueSize` was a monitor, returns a dataframe of queue sizes over time."""
         if "TimeQueueSize" in self.MonitorHolder:
             return pd.DataFrame(self.MonitorHolder["TimeQueueSize"].Data).transpose()
         else:
@@ -109,6 +111,7 @@ class ParallelQueueSystem:
 
     @property
     def MonitorOutput(self):
+        """The data acquired by the monitors as observed during the simulation."""
         return {name: monitor.Data for name, monitor in self.MonitorHolder.items()}
 
 
@@ -133,8 +136,7 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     :param AArgs: parameters needed by the function.
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
-    :param Monitors: Any monitor which overrides the methods of monitors.Monitor
-    :type Monitors: List[monitors.Monitor]
+    :param Monitors: List of monitors which overrides the methods of monitors.Monitor
 
     Example
     -------
@@ -173,8 +175,7 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     :param AArgs: parameters needed by the function.
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
-    :param Monitors: Any monitor which overrides the methods of monitors.Monitor
-    :type Monitors: List[monitors.Monitor]
+    :param Monitors: List of monitors which overrides the methods of monitors.Monitor
     """
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors

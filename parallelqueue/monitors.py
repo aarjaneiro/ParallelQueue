@@ -5,9 +5,6 @@ enough
 so that one can build their own by overriding its `Name` and its data-gathering `Add` function.
 """
 
-
-#   TODO: Introduce analysis class which can interact with Monitor interface
-
 # Base monitor class with overridable members.
 class Monitor:
     """

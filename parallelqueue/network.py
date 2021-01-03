@@ -12,7 +12,7 @@ class Network:
     """
     The Network constructor allows a user to create a queueing network by overriding each member.
     Upon generation, jobs flow through a network in the order of: Arrivals → Router → Job. By default, the Network class
-    can be used to handle JSQd, Redundancy-d, and Threshold-(d,r) models.
+    can be used to handle JSQd, Redundancy-d, and Threshold-(d,r) models with general arrival and service distributions.
     """
 
     def __init__(self, **kwargs):
@@ -22,10 +22,13 @@ class Network:
 
     @staticmethod
     def Job(system, env, name, arrive, queues, choice, **kwargs):
+        """This generator/process defines the behaviour of a job (replica or original) after routing."""
         return DefaultJob(system, env, name, arrive, queues, choice, **kwargs)
 
     def Router(self, system, env, name, queues, **kwargs):
+        """This generator/process specifies the scheduling system used."""
         return DefaultRouter(self.Job, system, env, name, queues, **kwargs)
 
     def Arrivals(self, system, env, number, queues, **kwargs):
+        """This generator/process defines how jobs enter the network"""
         return DefaultArrivals(self.Router, system, env, number, queues, **kwargs)

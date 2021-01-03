@@ -2,11 +2,12 @@ import random
 
 
 def NoInSystem(R):
-    """Total numberJobs of Jobs in the resource R"""
+    """Total number of Jobs in the resource R."""
     return len(R.put_queue) + len(R.users)
 
 
 def QueueSelector(d, parallelism, counters):
+    """The actual queue selection logic."""
     if d != parallelism:  # Separation necessary to reproduce SimPy base results (for same seed).
         return random.sample(range(len(counters)), d)
     else:
@@ -14,8 +15,9 @@ def QueueSelector(d, parallelism, counters):
 
 
 def DefaultRouter(job, system, env, name, queues, **kwargs):
-    """Specifies the scheduling system used. If replication is enabled, this is the superclass for the set of each
-    job and their replicas.
+    """Specifies the scheduling system used. If replication is enabled, this router tracks
+    each set of replicas using a :code:`base_models.ParallelQueueSystem.ReplicaDict` which can be accessed
+    by :code:`network.Network.Job` processes.
 
     :param job: Job process.
     :param system: System providing environment.
