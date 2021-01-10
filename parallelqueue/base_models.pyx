@@ -1,14 +1,14 @@
+#cython: language_level=3
 import random
 from warnings import warn
 
 import pandas as pd
 from simpy import Environment, Resource
-
 from parallelqueue import monitors
 from parallelqueue.network import Network
 
 
-class ParallelQueueSystem:
+cdef class ParallelQueueSystem:
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
@@ -57,8 +57,8 @@ class ParallelQueueSystem:
 
     """
 
-    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, infiniteJobs=True, Replicas=True,
-                 numberJobs=0, network=Network, **kwargs):
+    def __init__(self, int parallelism, int seed, int d, r=None, maxTime=None, bint doPrint=False, bint infiniteJobs=True, bint Replicas=True,
+                int numberJobs=0, network=Network, **kwargs):
         self.network = network
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"

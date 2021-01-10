@@ -1,3 +1,5 @@
+#cython: language_level=3
+
 """
 This module contains methods for monitoring and visualization. As simulations run, the `Monitor` class interacts with
 the main environment, gathering data at certain intervals. Moreover, the `Monitor` class was designed to be general
@@ -6,7 +8,7 @@ so that one can build their own by overriding its `Name` and its data-gathering 
 """
 
 # Base monitor class with overridable members.
-class Monitor:
+cdef class Monitor:
     """
     Base class defining the behaviour of monitors over `ParallelQueue` models.
     Unless overridden, the return of this class will be a `dict` of values.
@@ -17,43 +19,38 @@ class Monitor:
     you would fare better by overriding elements of `Monitor` as needed. This is as
     opposed to calling a collection of monitors which will then need to update frequently.
     """
+    cdef dict toData
 
-    def __init__(self):
-        self.toData = {}
+    cpdef void Add(self, dict MonitorInputs):
+        None
 
-    def Add(self, MonitorInputs: dict):
-        return None
-
-    @property
-    def Data(self) -> dict:
+    cpdef dict Data(self):
         return self.toData
 
-    @property
-    def Name(self) -> str:
+    cpdef str Name(self):
         return ""
 
 
-class TimeQueueSize(Monitor):
+cdef class TimeQueueSize(Monitor):
     """
     Tracks queue sizes over time.
     """
 
-    def Add(self, MonitorInputs: dict):  # Env always exists
+    cpdef void Add(self, dict MonitorInputs):  # Env always exists
         if {"queues"} <= MonitorInputs.keys():  # Leaving system
             queues = MonitorInputs["queues"]
             self.toData[MonitorInputs["env"].now] = {i: len(queues[i].put_queue) for i in range(len(queues))}
 
-    @property
-    def Name(self):
+    cpdef str Name(self):
         return "TimeQueueSize"
 
 
-class ReplicaSets(Monitor):
+cdef class ReplicaSets(Monitor):
     """
     Tracks replica sets generated over time, along with their times of creation and disposal.
     """
 
-    def Add(self, MonitorInputs: dict):
+    cpdef void Add(self, dict MonitorInputs):
         if {"choices", "name"} <= MonitorInputs.keys():
             time = MonitorInputs["env"].now  # Env always exists
             name = MonitorInputs["name"]
@@ -65,27 +62,25 @@ class ReplicaSets(Monitor):
             if name in self.toData.keys():
                 self.toData[name]["exit"] = time
 
-    @property
-    def Name(self):
+    cpdef str Name(self):
         return "ReplicaSets"
 
 
-class JobTime(Monitor):
+cdef class JobTime(Monitor):
     """
     Tracks time of job entry and exit.
     """
 
-    def Add(self, MonitorInputs: dict):
+    cpdef void Add(self, dict MonitorInputs):
         if {"arrive", "wait", "name"} <= MonitorInputs.keys():  # `wait` is a dummy to know @ server
             name = MonitorInputs["name"]
             self.toData[name] = {"entry": MonitorInputs["arrive"], "exit": MonitorInputs["env"].now}
 
-    @property
-    def Name(self):
+    cpdef str Name(self):
         return "JobTime"
 
 
-class JobTotal(Monitor):
+cdef class JobTotal(Monitor):
     """
     Tracks total time each job/set spends in system.
     To get the mean time each job/set spends:
@@ -105,11 +100,10 @@ class JobTotal(Monitor):
 
     """
 
-    def Add(self, MonitorInputs: dict):
+    cpdef void Add(self, dict MonitorInputs):
         if {"finish", "name"} <= MonitorInputs.keys():
             name = MonitorInputs["name"]
             self.toData[name] = MonitorInputs["finish"]
 
-    @property
-    def Name(self):
+    cpdef str Name(self):
         return "JobTotal"

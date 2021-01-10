@@ -1,12 +1,12 @@
+#cython: language_level=3
 from simpy import Interrupt
 
-
-def DefaultJob(system, env, name, arrive, queues, choice, **kwargs):
+def DefaultJob(system, env, str name, float arrive, queues, int choice, **kwargs):
     """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after
     routing.
 
     :param system: System providing environment.
-    :type system: base_models.ParallelQueueSystem
+    :type system: base_models.pyx.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param name: Identifier for the job.
@@ -18,10 +18,14 @@ def DefaultJob(system, env, name, arrive, queues, choice, **kwargs):
     :param choice: The queue which this replica is currently in
     :type choice: int
     """
+    cdef float wait, tib, finish
+    cdef dict inputs
+    cdef str Rename
+
     with queues[choice].request() as request:
         try:
             # Wait in queue
-            Rename = f"{name}@{choice}"
+            Rename = str(f"{name}@{choice}")
             if system.doPrint:
                 print(f'    ↳ {Rename}')
             yield request

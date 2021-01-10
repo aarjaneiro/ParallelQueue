@@ -1,17 +1,19 @@
+#cython: language_level=3
+
 import random
 
 
-def NoInSystem(R):
+cdef int NoInSystem(R):
     """Total number of Jobs in the resource R."""
     return len(R.put_queue) + len(R.users)
 
 
-def QueueSelector(d, parallelism, counters):
+cdef list QueueSelector(d, parallelism, counters):
     """The actual queue selection logic."""
     if d != parallelism:  # Separation necessary to reproduce SimPy base results (for same seed).
         return random.sample(range(len(counters)), d)
     else:
-        return range(parallelism)
+        return list(range(parallelism))
 
 
 def DefaultRouter(job, system, env, name, queues, **kwargs):
@@ -21,7 +23,7 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
 
     :param job: Job process.
     :param system: System providing environment.
-    :type system: base_models.ParallelQueueSystem
+    :type system: base_models.pyx.ParallelQueueSystem
     :param env: Environment for the simulation.
     :type env: simpy.Environment
     :param name: Identifier for the job.
@@ -29,6 +31,9 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
     :param queues: A list of queues to consider.
     :type queues: List[simpy.Resource]
     """
+    cdef float arrive
+    cdef dict parsed, inputs
+    cdef list choices, replicas
     arrive = env.now
     parsed = {i: NoInSystem(queues[i]) for i in QueueSelector(system.d, system.parallelism, queues)}
     if system.MonitorHolder is not None:
