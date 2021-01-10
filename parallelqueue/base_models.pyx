@@ -4,11 +4,12 @@ from warnings import warn
 
 import pandas as pd
 from simpy import Environment, Resource
+
 from parallelqueue import monitors
-from parallelqueue.network import Network
+from parallelqueue import network
 
-
-cdef class ParallelQueueSystem:
+# wrapper for python init-like functionality
+def ParallelQueueSystem(*args, **kwargs) -> _CParallelQueueSystem:
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
@@ -56,9 +57,16 @@ cdef class ParallelQueueSystem:
 
 
     """
+    return _CParallelQueueSystem.init(*args, **kwargs)
 
-    def __init__(self, int parallelism, int seed, int d, r=None, maxTime=None, bint doPrint=False, bint infiniteJobs=True, bint Replicas=True,
-                int numberJobs=0, network=Network, **kwargs):
+# noinspection PyAttributeOutsideInit
+cdef class _CParallelQueueSystem:
+    """
+    A C-based representation of ParallelQueueSystem (for speed).
+    """
+    cpdef void init(self, int parallelism, int seed, int d, dict kwargs, r=None, maxTime=None, bint doPrint=False,
+                    bint  infiniteJobs=True, bint Replicas=True,
+                    int numberJobs=0, network=network.Network):
         self.network = network
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"
@@ -82,7 +90,7 @@ cdef class ParallelQueueSystem:
                 m = monitor()  # initialize
                 self.MonitorHolder[m.Name] = m
 
-    def __sim_manager__(self):
+    cpdef __sim_manager__(self):
         """Manages the simulation by initializing and running it using the user-specified parameters."""
         random.seed(self.seed)
         env = Environment()
@@ -97,7 +105,7 @@ cdef class ParallelQueueSystem:
         if self.doPrint:
             print("\n Done \n")
 
-    def RunSim(self):
+    cpdef RunSim(self):
         """Runs the simulation."""
         self.__sim_manager__()
 
@@ -113,7 +121,6 @@ cdef class ParallelQueueSystem:
     def MonitorOutput(self):
         """The data acquired by the monitors as observed during the simulation."""
         return {name: monitor.Data for name, monitor in self.MonitorHolder.items()}
-
 
 # New 0.0.5 - Base models rewritten with same base class
 def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize],
@@ -154,9 +161,9 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
     }  # Pack to use as argument
-    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
-
+    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, kwargs=kwargs,
+                               doPrint=doPrint,
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True)
 
 def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize], r=None, maxTime=None,
          doPrint=False, infiniteJobs=True, numberJobs=0):
@@ -180,5 +187,6 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
     }  # Pack to use as argument
-    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
+    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, kwargs=kwargs, maxTime=maxTime,
+                               doPrint=doPrint,
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False)

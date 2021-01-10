@@ -2,11 +2,9 @@
 
 import random
 
-
 cdef int NoInSystem(R):
     """Total number of Jobs in the resource R."""
     return len(R.put_queue) + len(R.users)
-
 
 cdef list QueueSelector(d, parallelism, counters):
     """The actual queue selection logic."""
@@ -14,7 +12,6 @@ cdef list QueueSelector(d, parallelism, counters):
         return random.sample(range(len(counters)), d)
     else:
         return list(range(parallelism))
-
 
 def DefaultRouter(job, system, env, name, queues, **kwargs):
     """Specifies the scheduling system used. If replication is enabled, this router tracks

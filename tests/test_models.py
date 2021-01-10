@@ -1,21 +1,34 @@
+import random
 from unittest import TestCase
 
-from parallelqueue import base_models, monitors
+from pandas import DataFrame
+
+import parallelqueue.base_models as bm
+import parallelqueue.monitors as mns
+
+
+
+class TestWrapper(TestCase):
+    wrapped = bm.ParallelQueueSystem(maxTime=100.0, parallelism=1000, seed=1234, d=2,
+                                                            Replicas=True, Arrival=random.expovariate, AArgs=0.5,
+                                                            Service=random.expovariate, SArgs=1, Monitors=[mns.TimeQueueSize])
+    wrapped.RunSim()
+    assert type(wrapped.DataFrame) == DataFrame
 
 
 class TestModels(TestCase):
     # Tries all base models
     def test_runall(self):
         base = 0
-        sims = [base_models.ParallelQueueSystem(maxTime=100.0, parallelism=1000, seed=1234, d=2,
-                                                Replicas=True, Arrival=random.expovariate, AArgs=0.5,
-                                                Service=random.expovariate, SArgs=1),
-                base_models.JSQd(maxTime=100.0, parallelism=1000, seed=1234,
-                                 d=2, Arrival=random.expovariate, AArgs=0.5,
-                                 Service=random.expovariate, SArgs=1),
-                base_models.RedundancyQueueSystem(maxTime=100.0, parallelism=1000, seed=1234, d=2,
-                                                  Arrival=random.expovariate, AArgs=0.5,
-                                                  Service=random.expovariate, SArgs=1)]
+        sims = [bm.ParallelQueueSystem(maxTime=100.0, parallelism=1000, seed=1234, d=2,
+                                                              Replicas=True, Arrival=random.expovariate, AArgs=0.5,
+                                                              Service=random.expovariate, SArgs=1),
+                bm.JSQd(maxTime=100.0, parallelism=1000, seed=1234,
+                                               d=2, Arrival=random.expovariate, AArgs=0.5,
+                                               Service=random.expovariate, SArgs=1),
+                bm.RedundancyQueueSystem(maxTime=100.0, parallelism=1000, seed=1234, d=2,
+                                                                Arrival=random.expovariate, AArgs=0.5,
+                                                                Service=random.expovariate, SArgs=1)]
         for i in sims:
             try:
                 i.RunSim()
@@ -24,9 +37,9 @@ class TestModels(TestCase):
         assert base == 0
 
     def test_simpy(self):
-        sim = base_models.JSQd(numberJobs=5, infiniteJobs=False, parallelism=2, seed=12345,
-                               d=2, Arrival=random.expovariate, AArgs=1,
-                               Service=random.expovariate, SArgs=1 / 10, doPrint=True)
+        sim = bm.JSQd(numberJobs=5, infiniteJobs=False, parallelism=2, seed=12345,
+                                             d=2, Arrival=random.expovariate, AArgs=1,
+                                             Service=random.expovariate, SArgs=1 / 10, doPrint=True)
 
         f = io.StringIO()
         with redirect_stdout(f):
@@ -45,14 +58,14 @@ class TestModels(TestCase):
     def test_seed(self):
         # 1 seed should give 1 result across 2 initializations
         base = 0
-        sim1 = base_models.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
-                                Arrival=random.expovariate, AArgs=0.5,
-                                Service=random.expovariate, SArgs=1)
+        sim1 = bm.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
+                                              Arrival=random.expovariate, AArgs=0.5,
+                                              Service=random.expovariate, SArgs=1)
         sim1.RunSim()
         df1 = sim1.DataFrame
-        sim2 = base_models.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
-                                Arrival=random.expovariate, AArgs=0.5,
-                                Service=random.expovariate, SArgs=1)
+        sim2 = bm.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
+                                              Arrival=random.expovariate, AArgs=0.5,
+                                              Service=random.expovariate, SArgs=1)
         sim2.RunSim()
         df2 = sim2.DataFrame
         for i in range(df1.shape[0]):
@@ -64,11 +77,11 @@ class TestModels(TestCase):
     def test_monitors(self):
         # 1 seed should give 1 result across 2 initializations
         base = 0
-        sim = base_models.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
-                               Arrival=random.expovariate, AArgs=0.5,
-                               Service=random.expovariate, SArgs=1,
-                               Monitors=[monitors.TimeQueueSize, monitors.JobTime, monitors.JobTotal,
-                                         monitors.ReplicaSets])
+        sim = bm.JSQd(maxTime=100.0, parallelism=100, seed=1234, d=2,
+                                             Arrival=random.expovariate, AArgs=0.5,
+                                             Service=random.expovariate, SArgs=1,
+                                             Monitors=[mns.TimeQueueSize, mns.JobTime, mns.JobTotal,
+                                                       mns.ReplicaSets])
         sim.RunSim()
         df = sim.MonitorOutput
         assert len(df) == 4

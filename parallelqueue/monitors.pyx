@@ -6,9 +6,12 @@ the main environment, gathering data at certain intervals. Moreover, the `Monito
 enough
 so that one can build their own by overriding its `Name` and its data-gathering `Add` function.
 """
+from collections import deque
+from typing import Set
 
-# Base monitor class with overridable members.
-cdef class Monitor:
+import pandas as pd
+
+cpdef class Monitor:
     """
     Base class defining the behaviour of monitors over `ParallelQueue` models.
     Unless overridden, the return of this class will be a `dict` of values.
@@ -19,38 +22,41 @@ cdef class Monitor:
     you would fare better by overriding elements of `Monitor` as needed. This is as
     opposed to calling a collection of monitors which will then need to update frequently.
     """
-    cdef dict toData
+    cdef list toData
 
-    cpdef void Add(self, dict MonitorInputs):
-        None
+    def Add(self, MonitorInputs: dict):
+        return None
 
-    cpdef dict Data(self):
+    @property
+    def Data(self) -> dict:
         return self.toData
 
-    cpdef str Name(self):
+    @property
+    def Name(self) -> str:
         return ""
 
 
-cdef class TimeQueueSize(Monitor):
+class TimeQueueSize(Monitor):
     """
     Tracks queue sizes over time.
     """
 
-    cpdef void Add(self, dict MonitorInputs):  # Env always exists
+    def Add(self, MonitorInputs: dict):  # Env always exists
         if {"queues"} <= MonitorInputs.keys():  # Leaving system
             queues = MonitorInputs["queues"]
             self.toData[MonitorInputs["env"].now] = {i: len(queues[i].put_queue) for i in range(len(queues))}
 
-    cpdef str Name(self):
+    @property
+    def Name(self):
         return "TimeQueueSize"
 
 
-cdef class ReplicaSets(Monitor):
+class ReplicaSets(Monitor):
     """
     Tracks replica sets generated over time, along with their times of creation and disposal.
     """
 
-    cpdef void Add(self, dict MonitorInputs):
+    def Add(self, MonitorInputs: dict):
         if {"choices", "name"} <= MonitorInputs.keys():
             time = MonitorInputs["env"].now  # Env always exists
             name = MonitorInputs["name"]
@@ -61,26 +67,27 @@ cdef class ReplicaSets(Monitor):
             name = MonitorInputs["name"]
             if name in self.toData.keys():
                 self.toData[name]["exit"] = time
-
-    cpdef str Name(self):
+    @property
+    def Name(self):
         return "ReplicaSets"
 
 
-cdef class JobTime(Monitor):
+class JobTime(Monitor):
     """
     Tracks time of job entry and exit.
     """
 
-    cpdef void Add(self, dict MonitorInputs):
+    def Add(self, MonitorInputs: dict):
         if {"arrive", "wait", "name"} <= MonitorInputs.keys():  # `wait` is a dummy to know @ server
             name = MonitorInputs["name"]
             self.toData[name] = {"entry": MonitorInputs["arrive"], "exit": MonitorInputs["env"].now}
 
-    cpdef str Name(self):
+    @property
+    def Name(self):
         return "JobTime"
 
 
-cdef class JobTotal(Monitor):
+class JobTotal(Monitor):
     """
     Tracks total time each job/set spends in system.
     To get the mean time each job/set spends:
@@ -100,10 +107,66 @@ cdef class JobTotal(Monitor):
 
     """
 
-    cpdef void Add(self, dict MonitorInputs):
+    def Add(self, MonitorInputs: dict):
         if {"finish", "name"} <= MonitorInputs.keys():
             name = MonitorInputs["name"]
             self.toData[name] = MonitorInputs["finish"]
 
-    cpdef str Name(self):
+    @property
+    def Name(self):
         return "JobTotal"
+
+
+#TODO: Remove dependence on pandas & speed up the per set search
+class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
+    def Add(self, MonitorInputs: dict):
+        if {"choices", "name"} <= MonitorInputs.keys():
+            time = MonitorInputs["env"].now  # Env always exists
+            name = MonitorInputs["name"]
+            choices: list = MonitorInputs["choices"]
+            self.toData[name] = {"choices": frozenset(choices), "entry": time}
+
+        elif {"name"} <= MonitorInputs.keys():  # Leaving system
+            time = MonitorInputs["env"].now
+            name = MonitorInputs["name"]
+            if name in self.toData.keys():
+                self.toData[name]["exit"] = time
+
+    def __perSet__(self, df: pd.DataFrame):
+        """
+        Joins frozensets with at least one common element.
+        """
+        memory = set()
+        frozen: frozenset
+        categories: Set[frozenset] = set(df["choices"])  # gets uniques
+        for frozen in categories:  # for frozen set
+            localFrozen = frozen  # copies without changing values in iteration below
+            for i in frozen:
+                if i not in memory:  # member not done before
+                    memory.add(i)  # only to do once
+                    for others in [sm for sm in df["choices"] if i in sm]:
+                        together = localFrozen.union(others)  # value to reassign in df for old frozen/others
+                        for change in df.index[df["choices"] == localFrozen, "choices"].tolist():
+                            df.at[change, "choices"] = together
+                        for change in df.index[df["choices"] == others, "choices"].tolist():
+                            df.at[change, "choices"] = together
+                        localFrozen = together
+        return df
+
+    @property
+    def Data(self):
+        # basedata = {f"{value['choices']}@{key}": value for key, value in self.toData.items()}
+        data = pd.DataFrame(self.toData).transpose()
+        events = deque(sorted(set(data["entry"].to_list()).union(
+            set(data["exit"].to_list()))))  # set => drop repeats, sorted makes low->high, deque => drop hash table
+        ret = []
+        while events:
+            parse = data[data["exit"] >= events[0]]  # Restrict to upper bounds
+            loc = self.__perSet__(parse[parse["entry"] <= events[0]]).groupby("choices").count()["entry"]
+            ret.append(loc)
+            events.popleft()
+        return ret
+
+    @property
+    def Name(self):
+        return "ReplicaClassCounts"

@@ -27,5 +27,3 @@ def DefaultArrivals(router, system, env, int number, queues, **kwargs):
             env.process(c)
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
-
-

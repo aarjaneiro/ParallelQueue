@@ -4,10 +4,9 @@ Basic building components (generators/processes) for parallel models. In general
 a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
 Arrivals->Router->Job/Servicing.
 """
-from parallelqueue.arrivals import DefaultArrivals
-from parallelqueue.jobs import DefaultJob
-from parallelqueue.routers import DefaultRouter
-
+from arrivals import DefaultArrivals
+from jobs import DefaultJob
+from routers import DefaultRouter
 
 cdef class Network:
     """
@@ -15,9 +14,9 @@ cdef class Network:
     Upon generation, jobs flow through a network in the order of: Arrivals → Router → Job. By default, the Network class
     can be used to handle JSQd, Redundancy-d, and Threshold-(d,r) models with general arrival and service distributions.
     """
+    cdef dict network_args
 
     def __init__(self, **kwargs):
-        self.network_args = {}  # Allow user to pass anything they deem fit.
         for k, v in kwargs.items():
             self.network_args[k] = v
 
