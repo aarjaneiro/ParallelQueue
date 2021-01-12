@@ -1,4 +1,5 @@
-setuptools~=50.3.2
+setuptools~=51.1.2
 simpy~=4.0.1
 numpy~=1.19.4
-pandas~=1.1.4
+pandas~=1.2.0
+cython~=0.29.21

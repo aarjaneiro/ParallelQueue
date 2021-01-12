@@ -4,9 +4,9 @@ Basic building components (generators/processes) for parallel models. In general
 a model by defining an arrival, routing, and job/servicing process such that work is introduced in the order of
 Arrivals->Router->Job/Servicing.
 """
-from arrivals import DefaultArrivals
-from jobs import DefaultJob
-from routers import DefaultRouter
+from parallelqueue.arrivals import DefaultArrivals
+from parallelqueue.jobs import DefaultJob
+from parallelqueue.routers import DefaultRouter
 
 cdef class Network:
     """

@@ -10,8 +10,10 @@ from collections import deque
 from typing import Set
 
 import pandas as pd
+import numpy as np
+cimport numpy as np
 
-cpdef class Monitor:
+class Monitor:
     """
     Base class defining the behaviour of monitors over `ParallelQueue` models.
     Unless overridden, the return of this class will be a `dict` of values.
@@ -22,7 +24,8 @@ cpdef class Monitor:
     you would fare better by overriding elements of `Monitor` as needed. This is as
     opposed to calling a collection of monitors which will then need to update frequently.
     """
-    cdef list toData
+    def __init__(self):
+        self.toData = {}
 
     def Add(self, MonitorInputs: dict):
         return None
@@ -121,37 +124,16 @@ class JobTotal(Monitor):
 class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
     def Add(self, MonitorInputs: dict):
         if {"choices", "name"} <= MonitorInputs.keys():
-            time = MonitorInputs["env"].now  # Env always exists
+            time = np.float32(MonitorInputs["env"].now)  # Env always exists
             name = MonitorInputs["name"]
             choices: list = MonitorInputs["choices"]
             self.toData[name] = {"choices": frozenset(choices), "entry": time}
 
         elif {"name"} <= MonitorInputs.keys():  # Leaving system
-            time = MonitorInputs["env"].now
+            time = np.float32(MonitorInputs["env"].now)
             name = MonitorInputs["name"]
             if name in self.toData.keys():
                 self.toData[name]["exit"] = time
-
-    def __perSet__(self, df: pd.DataFrame):
-        """
-        Joins frozensets with at least one common element.
-        """
-        memory = set()
-        frozen: frozenset
-        categories: Set[frozenset] = set(df["choices"])  # gets uniques
-        for frozen in categories:  # for frozen set
-            localFrozen = frozen  # copies without changing values in iteration below
-            for i in frozen:
-                if i not in memory:  # member not done before
-                    memory.add(i)  # only to do once
-                    for others in [sm for sm in df["choices"] if i in sm]:
-                        together = localFrozen.union(others)  # value to reassign in df for old frozen/others
-                        for change in df.index[df["choices"] == localFrozen, "choices"].tolist():
-                            df.at[change, "choices"] = together
-                        for change in df.index[df["choices"] == others, "choices"].tolist():
-                            df.at[change, "choices"] = together
-                        localFrozen = together
-        return df
 
     @property
     def Data(self):
@@ -159,14 +141,38 @@ class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
         data = pd.DataFrame(self.toData).transpose()
         events = deque(sorted(set(data["entry"].to_list()).union(
             set(data["exit"].to_list()))))  # set => drop repeats, sorted makes low->high, deque => drop hash table
-        ret = []
+        ret = {}
         while events:
-            parse = data[data["exit"] >= events[0]]  # Restrict to upper bounds
-            loc = self.__perSet__(parse[parse["entry"] <= events[0]]).groupby("choices").count()["entry"]
-            ret.append(loc)
-            events.popleft()
+            current = events.popleft()
+            parse = data[data["exit"] >= current]  # Restrict to upper bounds
+            loc: pd.DataFrame = __perSet__(parse[parse["entry"] <= current]).groupby("choices").count()["entry"]
+            ret[current] = loc
         return ret
 
     @property
     def Name(self):
         return "ReplicaClassCounts"
+
+
+cdef __perSet__(df: pd.DataFrame): # auto-like method
+    """
+    Joins frozensets with at least one common element.
+    """
+    cdef set memory = set()
+    cdef frozenset frozen, localFrozen, others
+    cdef int i
+    cdef set categories = set(df["choices"])  # gets uniques
+    for frozen in categories:  # for frozen set
+        localFrozen = frozen  # copies without changing values in iteration below
+        for i in frozen:
+            if i not in memory:  # member not done before
+                memory.add(i)  # only to do once
+                for others in df["choices"]:  # changed from list comprehension
+                    if others != localFrozen and i in others:  # skip if equal or doesnt contain i
+                        together = localFrozen.union(others)  # value to reassign in df for old frozen/others
+                        for change in df.index[df["choices"] == localFrozen].tolist():
+                            df.at[change, "choices"] = together
+                        for change in df.index[df["choices"] == others].tolist():
+                            df.at[change, "choices"] = together
+                        localFrozen = together  # these have now been done for i
+    return df

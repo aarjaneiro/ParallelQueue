@@ -8,14 +8,13 @@ from simpy import Environment, Resource
 from parallelqueue import monitors
 from parallelqueue import network
 
-# wrapper for python init-like functionality
-def ParallelQueueSystem(*args, **kwargs) -> _CParallelQueueSystem:
+
+class ParallelQueueSystem:
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
     while awaiting
     service. After completing service, each job and its replicas are disposed of.
-
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
     :param numberJobs: Max number of jobs if infiniteJobs is False. Will override infiniteJobs if infiniteJobs is True.
     :param parallelism: Number of queues in parallel.
@@ -31,11 +30,9 @@ def ParallelQueueSystem(*args, **kwargs) -> _CParallelQueueSystem:
     :param SArgs: parameters needed by the function.
     :param Monitors: Any monitor which overrides the methods of monitors.Monitor
     :param Network: Network class which defines the structure of the system.
-
     Example
     -------
     .. code-block:: python
-
         # Specifies a SimPy environment consisting
         # of a Redundancy-2 queueing system and a Poisson arrival process.
         sim = ParallelQueueSystem(maxTime=100.0,
@@ -43,30 +40,19 @@ def ParallelQueueSystem(*args, **kwargs) -> _CParallelQueueSystem:
             Arrival=random.expovariate, AArgs=0.5,
             Service=random.expovariate, SArgs=1)
         sim.RunSim()
-
     References
     ----------
     Heavy Traffic Analysis of the Mean Response Time for Load Balancing Policies in the Mean Field Regime
             Tim Hellemans, Benny Van Houdt (2020)
             https://arxiv.org/abs/2004.00876
-
     Redundancy-d:The Power of d Choices for Redundancy
             Kristen Gardner, Mor Harchol-Balter, Alan Scheller-Wolf,
             Mark Velednitsky, Samuel Zbarsky (2017)
             https://doi.org/10.1287/opre.2016.1582
-
-
     """
-    return _CParallelQueueSystem.init(*args, **kwargs)
 
-# noinspection PyAttributeOutsideInit
-cdef class _CParallelQueueSystem:
-    """
-    A C-based representation of ParallelQueueSystem (for speed).
-    """
-    cpdef void init(self, int parallelism, int seed, int d, dict kwargs, r=None, maxTime=None, bint doPrint=False,
-                    bint  infiniteJobs=True, bint Replicas=True,
-                    int numberJobs=0, network=network.Network):
+    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, infiniteJobs=True, Replicas=True,
+                 numberJobs=0, network=network.Network, **kwargs):
         self.network = network
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"
@@ -90,7 +76,7 @@ cdef class _CParallelQueueSystem:
                 m = monitor()  # initialize
                 self.MonitorHolder[m.Name] = m
 
-    cpdef __sim_manager__(self):
+    def __sim_manager__(self):
         """Manages the simulation by initializing and running it using the user-specified parameters."""
         random.seed(self.seed)
         env = Environment()
@@ -105,7 +91,7 @@ cdef class _CParallelQueueSystem:
         if self.doPrint:
             print("\n Done \n")
 
-    cpdef RunSim(self):
+    def RunSim(self):
         """Runs the simulation."""
         self.__sim_manager__()
 
@@ -122,6 +108,7 @@ cdef class _CParallelQueueSystem:
         """The data acquired by the monitors as observed during the simulation."""
         return {name: monitor.Data for name, monitor in self.MonitorHolder.items()}
 
+
 # New 0.0.5 - Base models rewritten with same base class
 def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize],
                           r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0):
@@ -130,7 +117,6 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     itself before enqueueing. For the sampled queues with sizes less than r, the job and/or its clones will join
     while awaiting
     service. After completing service, each job and its replicas are disposed of.
-
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
     :param numberJobs: Max number of jobs if infiniteJobs is False. Will be ignored if infiniteJobs is True.
     :param parallelism: Number of queues in parallel.
@@ -144,11 +130,9 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     :param Service: A kwarg specifying the service distribution to use (a function).
     :param SArgs: parameters needed by the function.
     :param Monitors: List of monitors which overrides the methods of monitors.Monitor
-
     Example
     -------
     .. code-block:: python
-
         # Specifies a SimPy environment consisting
         # of a Redundancy-2 queueing system and a Poisson arrival process.
         sim = RedundancyQueueSystem(maxTime=100.0,
@@ -156,20 +140,18 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
             Arrival=random.expovariate, AArgs=0.5,
             Service=random.expovariate, SArgs=1)
         sim.RunSim()
-
     """
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
     }  # Pack to use as argument
-    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, kwargs=kwargs,
-                               doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True)
+    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
+
 
 def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize], r=None, maxTime=None,
          doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join for
     each arriving job.
-
     :param maxTime: If set, becomes the maximum allotted time for this simulation.
     :param numberJobs: Max number of jobs if infiniteJobs is False. Will be ignored if infiniteJobs is True.
     :param parallelism: Number of queues in parallel.
@@ -187,6 +169,5 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
     }  # Pack to use as argument
-    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, kwargs=kwargs, maxTime=maxTime,
-                               doPrint=doPrint,
-                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False)
+    return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
+                               infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=False, **kwargs)
