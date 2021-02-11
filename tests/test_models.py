@@ -2,6 +2,7 @@ import random
 from unittest import TestCase
 
 import pandas as pd
+
 import parallelqueue.base_models as bm
 import parallelqueue.monitors as mns
 

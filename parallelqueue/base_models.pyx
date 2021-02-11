@@ -147,7 +147,6 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
-
 def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize], r=None, maxTime=None,
          doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join for

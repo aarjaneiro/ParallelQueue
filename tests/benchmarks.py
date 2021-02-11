@@ -11,8 +11,8 @@ def JoinsReplicaClasses():
     t1 = time.time()
     model = bm.ParallelQueueSystem(maxTime=100, parallelism=1000, seed=1234, d=2,
                                    doPrint=True,
-                                            Replicas=True, Arrival=random.expovariate, AArgs=0.5,
-                                            Service=random.expovariate, SArgs=1, Monitors=[mns.ReplicaClassCounts])
+                                   Replicas=True, Arrival=random.expovariate, AArgs=0.5,
+                                   Service=random.expovariate, SArgs=1, Monitors=[mns.ReplicaClassCounts])
 
     model.RunSim()
     t2 = time.time()
@@ -22,8 +22,8 @@ def JoinsReplicaClasses():
 def TQSizes():
     t1 = time.time()
     model = bm.ParallelQueueSystem(maxTime=100, parallelism=1000, seed=1234, d=2,
-                                            Replicas=True, Arrival=random.expovariate, AArgs=0.5,
-                                            Service=random.expovariate, SArgs=1, Monitors=[mns.TimeQueueSize])
+                                   Replicas=True, Arrival=random.expovariate, AArgs=0.5,
+                                   Service=random.expovariate, SArgs=1, Monitors=[mns.TimeQueueSize])
 
     model.RunSim()
     type(model.MonitorOutput)

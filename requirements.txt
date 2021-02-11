@@ -1,5 +1,5 @@
 setuptools~=51.1.2
-simpy~=4.0.1
-numpy~=1.19.4
+simpy
+numpy
 pandas~=1.2.0
 cython~=0.29.21

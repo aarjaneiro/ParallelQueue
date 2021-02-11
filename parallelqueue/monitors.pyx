@@ -7,11 +7,13 @@ enough
 so that one can build their own by overriding its `Name` and its data-gathering `Add` function.
 """
 from collections import deque
-from typing import Set
 
-import pandas as pd
+cimport
+
+numpy as np
 import numpy as np
-cimport numpy as np
+import pandas as pd
+
 
 class Monitor:
     """
@@ -154,7 +156,7 @@ class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
         return "ReplicaClassCounts"
 
 
-cdef __perSet__(df: pd.DataFrame): # auto-like method
+cdef __perSet__(df: pd.DataFrame):
     """
     Joins frozensets with at least one common element.
     """

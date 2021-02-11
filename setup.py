@@ -1,8 +1,10 @@
 # region Imports must have setuptools come first
-from setuptools import setup, Extension
-from Cython.Build import cythonize
 from os import path
+
 import numpy
+from Cython.Build import cythonize
+from setuptools import setup
+
 # endregion
 
 this_directory = path.abspath(path.dirname(__file__))
