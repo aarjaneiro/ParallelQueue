@@ -8,10 +8,9 @@ so that one can build their own by overriding its `Name` and its data-gathering 
 """
 from collections import deque
 
-cimport
-
-numpy as np
 import numpy as np
+cimport numpy as np
+
 import pandas as pd
 
 
