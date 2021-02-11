@@ -8,7 +8,6 @@ from simpy import Environment, Resource
 from parallelqueue import monitors
 from parallelqueue import network
 
-
 class ParallelQueueSystem:
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
@@ -109,7 +108,6 @@ class ParallelQueueSystem:
         return {name: monitor.Data for name, monitor in self.MonitorHolder.items()}
 
 
-# New 0.0.5 - Base models rewritten with same base class
 def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize],
                           r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,

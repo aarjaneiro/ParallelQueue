@@ -4,7 +4,7 @@ def DefaultArrivals(router, system, env, int number, queues, **kwargs):
 
     :param router: Router process.
     :param system: System providing environment.
-    :type system: base_models.pyx.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param number: Max numberJobs of jobs if infiniteJobs is false.
@@ -21,7 +21,7 @@ def DefaultArrivals(router, system, env, int number, queues, **kwargs):
             t = kwargs["Arrival"](kwargs["AArgs"])
             yield env.timeout(t)
     else:
-        while True:  # referring to until not being passed
+        while True:
             number += 1
             c = router(system, env, 'Job%02d' % number, queues, **kwargs)
             env.process(c)

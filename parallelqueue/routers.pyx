@@ -20,7 +20,7 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
 
     :param job: Job process.
     :param system: System providing environment.
-    :type system: base_models.pyx.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation.
     :type env: simpy.Environment
     :param name: Identifier for the job.

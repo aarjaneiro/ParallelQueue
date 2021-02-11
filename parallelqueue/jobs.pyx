@@ -6,7 +6,7 @@ def DefaultJob(system, env, str name, float arrive, queues, int choice, **kwargs
     routing.
 
     :param system: System providing environment.
-    :type system: base_models.pyx.ParallelQueueSystem
+    :type system: base_models.ParallelQueueSystem
     :param env: Environment for the simulation
     :type env: simpy.Environment
     :param name: Identifier for the job.
