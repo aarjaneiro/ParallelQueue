@@ -50,8 +50,8 @@ class ParallelQueueSystem:
             https://doi.org/10.1287/opre.2016.1582
     """
 
-    def __init__(self, parallelism, seed, d, r=None, maxTime=None, doPrint=False, infiniteJobs=True, Replicas=True,
-                 numberJobs=0, network=network.Network, **kwargs):
+    def __init__(self, int parallelism, int seed, int d, object r=None, object maxTime=None, bint doPrint=False, bint infiniteJobs=True, bint Replicas=True,
+                 int numberJobs=0, object network=network.Network, **kwargs):
         self.network = network
         if infiniteJobs and numberJobs > 0:
             warn("\n Conflicting settings. Setting infiniteJobs := False, \n"

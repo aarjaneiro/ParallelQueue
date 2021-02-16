@@ -10,7 +10,8 @@ from collections import deque
 
 import numpy as np
 cimport numpy as np
-
+from libcpp.algorithm cimport sort
+from libcpp.queue cimport queue
 import pandas as pd
 
 
@@ -140,13 +141,14 @@ class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
     def Data(self):
         # basedata = {f"{value['choices']}@{key}": value for key, value in self.toData.items()}
         data = pd.DataFrame(self.toData).transpose()
-        events = deque(sorted(set(data["entry"].to_list()).union(
-            set(data["exit"].to_list()))))  # set => drop repeats, sorted makes low->high, deque => drop hash table
+        events = cppsort(set(data["entry"].to_list()).union(
+            set(data["exit"].to_list())))
+        events = QueueStack(events)
         ret = {}
         while events:
-            current = events.popleft()
+            current = events.pop()
             parse = data[data["exit"] >= current]  # Restrict to upper bounds
-            loc: pd.DataFrame = __perSet__(parse[parse["entry"] <= current]).groupby("choices").count()["entry"]
+            loc: pd.DataFrame = disjoints(parse[parse["entry"] <= current]).groupby("choices").count()["entry"]
             ret[current] = loc
         return ret
 
@@ -155,7 +157,7 @@ class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
         return "ReplicaClassCounts"
 
 
-cdef __perSet__(df: pd.DataFrame):
+cdef disjoints(df: pd.DataFrame):
     """
     Joins frozensets with at least one common element.
     """
@@ -177,3 +179,23 @@ cdef __perSet__(df: pd.DataFrame):
                             df.at[change, "choices"] = together
                         localFrozen = together  # these have now been done for i
     return df
+
+cdef compare(float a, float b):
+    return a < b
+cdef cppsort(float[:] x):
+    sort(&x[0], &x[len(x)], compare)
+
+
+cdef class QueueStack:
+    cdef queue[float] v
+
+    def push(self, x):
+        self.v.push(x)
+
+    def pop(self):
+        if self.v.empty():
+            raise IndexError()
+        return self.v.pop()
+
+    def size(self):
+        return self.v.size()

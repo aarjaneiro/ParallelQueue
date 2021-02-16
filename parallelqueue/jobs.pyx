@@ -1,7 +1,7 @@
 #cython: language_level=3
 from simpy import Interrupt
 
-def DefaultJob(system, env, str name, float arrive, queues, int choice, **kwargs):
+def DefaultJob(object system, object env, str name, float arrive, object queues, int choice, **kwargs):
     """For a redundancy model, this generator/process defines the behaviour of a job (replica or original) after
     routing.
 

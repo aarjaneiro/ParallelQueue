@@ -13,7 +13,7 @@ cdef list QueueSelector(d, parallelism, counters):
     else:
         return list(range(parallelism))
 
-def DefaultRouter(job, system, env, name, queues, **kwargs):
+def DefaultRouter(object job, object system, object env, str name, object queues, **kwargs):
     """Specifies the scheduling system used. If replication is enabled, this router tracks
     each set of replicas using a :code:`base_models.ParallelQueueSystem.ReplicaDict` which can be accessed
     by :code:`network.Network.Job` processes.
@@ -74,3 +74,5 @@ def DefaultRouter(job, system, env, name, queues, **kwargs):
             for monitor in system.MonitorHolder.values():
                 monitor.Add(inputs)
         env.process(c)
+
+

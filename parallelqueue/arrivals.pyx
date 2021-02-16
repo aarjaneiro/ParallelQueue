@@ -1,5 +1,5 @@
 #cython: language_level=3
-def DefaultArrivals(router, system, env, int number, queues, **kwargs):
+def DefaultArrivals(object router, object system, object env, int number, object  queues, **kwargs):
     """General arrival process; interarrival times are defined by the given distribution
 
     :param router: Router process.
