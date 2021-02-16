@@ -141,8 +141,9 @@ class ReplicaClassCounts(Monitor):  # "super" init can be added for perset usage
     def Data(self):
         # basedata = {f"{value['choices']}@{key}": value for key, value in self.toData.items()}
         data = pd.DataFrame(self.toData).transpose()
-        events = cppsort(set(data["entry"].to_list()).union(
-            set(data["exit"].to_list())))
+        events = set(data["entry"].to_list()).union(
+            set(data["exit"].to_list()))
+        cppsort(events)
         events = QueueStack(events)
         ret = {}
         while events:
