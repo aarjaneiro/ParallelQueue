@@ -108,7 +108,7 @@ class ParallelQueueSystem:
         return {name: monitor.Data for name, monitor in self.MonitorHolder.items()}
 
 
-def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize],
+def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=None,
                           r=None, maxTime=None, doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join,
     potentially replicating
@@ -139,13 +139,15 @@ def RedundancyQueueSystem(parallelism, seed, d, Arrival, AArgs, Service, SArgs, 
             Service=random.expovariate, SArgs=1)
         sim.RunSim()
     """
+    if Monitors is None:
+        Monitors = [monitors.TimeQueueSize]
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors,
     }  # Pack to use as argument
     return ParallelQueueSystem(parallelism=parallelism, seed=seed, d=d, r=r, maxTime=maxTime, doPrint=doPrint,
                                infiniteJobs=infiniteJobs, numberJobs=numberJobs, Replicas=True, **kwargs)
 
-def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitors.TimeQueueSize], r=None, maxTime=None,
+def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=None, r=None, maxTime=None,
          doPrint=False, infiniteJobs=True, numberJobs=0):
     """A queueing system wherein a Router chooses the smallest queue of d sampled (identical) queues to join for
     each arriving job.
@@ -163,6 +165,8 @@ def JSQd(parallelism, seed, d, Arrival, AArgs, Service, SArgs, Monitors=[monitor
     :param SArgs: parameters needed by the function.
     :param Monitors: List of monitors which overrides the methods of monitors.Monitor
     """
+    if Monitors is None:
+        Monitors = [monitors.TimeQueueSize]
     kwargs = {
         "Arrival": Arrival, "AArgs": AArgs, "Service": Service, "SArgs": SArgs, "Monitors": Monitors
     }  # Pack to use as argument

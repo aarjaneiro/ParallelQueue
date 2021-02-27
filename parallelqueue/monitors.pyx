@@ -45,12 +45,10 @@ class TimeQueueSize(Monitor):
     """
     Tracks queue sizes over time.
     """
-
     def Add(self, MonitorInputs: dict):  # Env always exists
         if {"queues"} <= MonitorInputs.keys():  # Leaving system
             queues = MonitorInputs["queues"]
-            self.toData[MonitorInputs["env"].now] = {i: len(queues[i].put_queue) for i in range(len(queues))}
-
+            self.toData[np.float16(MonitorInputs["env"].now)] = {i: len(queues[i].put_queue) for i in range(len(queues))}
     @property
     def Name(self):
         return "TimeQueueSize"

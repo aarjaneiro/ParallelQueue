@@ -1,4 +1,5 @@
 #cython: language_level=3
+
 from simpy import Interrupt
 
 def DefaultJob(object system, object env, str name, float arrive, object queues, int choice, **kwargs):
@@ -44,6 +45,7 @@ def DefaultJob(object system, object env, str name, float arrive, object queues,
                         c.interrupt()
                     except:
                         pass
+                system.ReplicaDict.pop(name)
             if system.MonitorHolder is not None:
                 inputs = locals()
                 for monitor in system.MonitorHolder.values():
