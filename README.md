@@ -56,5 +56,6 @@ References
 
 Release Notes
 -------------
-0.1.5.0 will likely be the only release for the next few weeks. 
-Next release is likely to include some of the above goals and parallelization tools.
+- 1.0.0 expands the `gitignore` to exclude temporary files typically generated when used in a virtual environment on Visual Studio.
+  - Also coincides with an official DOI being assigned via Zenodo.
+
